@@ -1,0 +1,22 @@
+1. Rachael Pei, Alina Pan
+2. Target domain: environmental data from the EPA toxics release inventory (TRI) about production and use of toxic chemicals.
+3. *TODO*
+4. Relational data model: 
+   Facility(facility_id PK, facility_name, city, state, region_code FK->EPARegion, email)
+   EPARegion(region_code PK, region_desc)
+   Chemical(cas_reg_num PK, chem_name, carcinogen, pfas, metal)
+   Form(doc_ctrl_num PK, facility_id FK->Facility, cas_reg_num FK->Chemical, year, max_amt_code FK->MaxAmtChem, produces, imports, sale_dist, byproduct, process_impurity, industry_code FK->Industry)
+   MaxAmtChem(max_amt_code PK, max_amt_desc)
+   Industry(industry_code PK, industry_desc)
+   ReleaseRecord(doc_ctrl_num FK->Form, medium, total_release, PK(doc_ctrl_num, medium))
+   SourceReductionActivity(src_red_code PK, src_red_desc)
+   ImplementsSourceReduction(doc_ctrl_num FK->FORM, src_red_code FK->SourceReductionActivity, activity_num, est_annual_red_code FK->EstimatedAnnualReduction, PK(doc_ctrl_num, activity_num))
+   EstimatedAnnualReduction(est_annual_red_code PK, est_annual_desc)
+   POTWFacility(potw_id PK, potw_name, potw_city, potw_state)
+   TransferredToPOTW(doc_ctrl_num FK->Form, potw_id FK->POTWFacility, potw_num, transfer_amt, PK(doc_ctrl_num, potw_num))
+5. *TODO*
+6. Sources: https://www.epa.gov/enviro/tri-ez-search, mostly from the flat form R tables and the 'Chemical Transfers to POTW Locations' table; https://ordspub.epa.gov/ords/guideme_ext/guideme_ext/guideme/file/tri%20reporting%20codes%20for%20form%20r%20and%20form%20a%20-%20july%202022.pdf for code descriptions
+Anticipated conversion issues: we will need to create some columns ourselves and change some formatting. For instance, the total releases are listed as AirTotalRelease, LandTotalRelease, etc. but we want to create a generalized ReleaseRecord that will have an attribute for the type of medium instead, which will require some preprocessing on our part. We will also need to create numberings/relative orderings ourselves to number entites like the source reduction activities and POTWs: they are labeled as POTW 1, POTW 2, etc. in the raw data, but we will need to extract those numbers and make them an attribute instead to create generalized entitities.
+7. *TODO*
+8. It would be interesting to look at natural language interfaces (ex. having the user be able to type in a query in English and our system will be able to process that and create analyses/outputs).
+
