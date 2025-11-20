@@ -38,12 +38,10 @@ SELECT
     f.city,
     f.state,
     SUM(r.total_release) AS total_release_all_media
-FROM Form AS frm
-JOIN Facility AS f
-    ON frm.facility_id = f.facility_id
-JOIN ReleaseRecord AS r
-    ON frm.doc_ctrl_num = r.doc_ctrl_num
-WHERE frm.year = 2022          
+FROM Form AS frm, Facility AS f, ReleaseRecord AS r
+WHERE frm.facility_id = f.facility_id
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.year = 2022          
   AND f.state = 'MD'           
 GROUP BY
     f.facility_id,
@@ -58,14 +56,11 @@ SELECT
     e.region_desc,
     r.medium,
     SUM(r.total_release) AS total_release
-FROM Form AS frm
-JOIN Facility AS f
-    ON frm.facility_id = f.facility_id
-JOIN EPARegion AS e
-    ON f.region_code = e.region_code
-JOIN ReleaseRecord AS r
-    ON frm.doc_ctrl_num = r.doc_ctrl_num
-WHERE frm.year = 2022
+FROM Form AS frm, Facility AS f, EPARegion AS e, ReleaseRecord AS r
+WHERE frm.facility_id = f.facility_id
+  AND f.region_code = e.region_code
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.year = 2022
 GROUP BY
     e.region_code,
     e.region_desc,
@@ -79,12 +74,10 @@ SELECT
     c.cas_reg_num,
     c.chem_name,
     SUM(r.total_release) AS total_release_all_media
-FROM Form AS frm
-JOIN Chemical AS c
-    ON frm.cas_reg_num = c.cas_reg_num
-JOIN ReleaseRecord AS r
-    ON frm.doc_ctrl_num = r.doc_ctrl_num
-WHERE frm.year = 2022
+FROM Form AS frm, Chemical AS c, ReleaseRecord AS r
+WHERE frm.cas_reg_num = c.cas_reg_num
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.year = 2022
 GROUP BY
     c.cas_reg_num,
     c.chem_name
@@ -95,14 +88,11 @@ LIMIT 10;
 SELECT
     f.state,
     SUM(r.total_release) AS total_carcinogen_release
-FROM Form AS frm
-JOIN Facility AS f
-    ON frm.facility_id = f.facility_id
-JOIN Chemical AS c
-    ON frm.cas_reg_num = c.cas_reg_num
-JOIN ReleaseRecord AS r
-    ON frm.doc_ctrl_num = r.doc_ctrl_num
-WHERE frm.year = 2022
+FROM Form AS frm, Facility AS f, Chemical AS c, ReleaseRecord AS r
+WHERE frm.facility_id = f.facility_id
+  AND frm.cas_reg_num = c.cas_reg_num
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.year = 2022
   AND c.carcinogen = TRUE
 GROUP BY f.state
 ORDER BY total_carcinogen_release DESC;
@@ -115,14 +105,11 @@ SELECT
     c.chem_name,
     frm.year,
     SUM(r.total_release) AS total_release_all_media
-FROM Form AS frm
-JOIN Facility AS f
-    ON frm.facility_id = f.facility_id
-JOIN Chemical AS c
-    ON frm.cas_reg_num = c.cas_reg_num
-JOIN ReleaseRecord AS r
-    ON frm.doc_ctrl_num = r.doc_ctrl_num
-WHERE frm.produces = TRUE
+FROM Form AS frm, Facility AS f, Chemical AS c, ReleaseRecord AS r
+WHERE frm.facility_id = f.facility_id
+  AND frm.cas_reg_num = c.cas_reg_num
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.produces = TRUE
   AND frm.imports = TRUE
   AND frm.year = 2022
 GROUP BY
@@ -138,12 +125,10 @@ SELECT
     i.industry_code,
     i.industry_desc,
     SUM(r.total_release) AS total_release_all_media
-FROM Form AS frm
-JOIN Industry AS i
-    ON frm.industry_code = i.industry_code
-JOIN ReleaseRecord AS r
-    ON frm.doc_ctrl_num = r.doc_ctrl_num
-WHERE frm.year = 2022
+FROM Form AS frm, Industry AS i, ReleaseRecord AS r
+WHERE frm.industry_code = i.industry_code
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.year = 2022
 GROUP BY
     i.industry_code,
     i.industry_desc
@@ -155,12 +140,10 @@ SELECT
     c.chem_name,
     COUNT(DISTINCT frm.facility_id) AS num_facilities,
     COUNT(DISTINCT f.state) AS num_states
-FROM Form AS frm
-JOIN Chemical AS c
-    ON frm.cas_reg_num = c.cas_reg_num
-JOIN Facility AS f
-    ON frm.facility_id = f.facility_id
-WHERE frm.year = 2022
+FROM Form AS frm, Chemical AS c, Facility AS f
+WHERE frm.cas_reg_num = c.cas_reg_num
+  AND frm.facility_id = f.facility_id
+  AND frm.year = 2022
 GROUP BY
     c.cas_reg_num,
     c.chem_name
@@ -173,12 +156,10 @@ SELECT
     p.potw_city,
     p.potw_state,
     SUM(t.transfer_amt) AS total_transfer_amt
-FROM TransferredToPOTW AS t
-JOIN POTWFacility AS p
-    ON t.potw_id = p.potw_id
-JOIN Form AS frm
-    ON t.doc_ctrl_num = frm.doc_ctrl_num
-WHERE frm.year = 2022
+FROM TransferredToPOTW AS t, POTWFacility AS p, Form AS frm
+WHERE t.potw_id = p.potw_id
+  AND t.doc_ctrl_num = frm.doc_ctrl_num
+  AND frm.year = 2022
 GROUP BY
     p.potw_id,
     p.potw_name,
@@ -193,10 +174,9 @@ WITH FacilityRelease AS (
         frm.doc_ctrl_num,
         frm.facility_id,
         SUM(r.total_release) AS total_release_all_media
-    FROM Form AS frm
-    JOIN ReleaseRecord AS r
-        ON frm.doc_ctrl_num = r.doc_ctrl_num
-    WHERE frm.year = 2022
+    FROM Form AS frm, ReleaseRecord AS r
+    WHERE frm.doc_ctrl_num = r.doc_ctrl_num
+      AND frm.year = 2022
     GROUP BY
         frm.doc_ctrl_num,
         frm.facility_id
@@ -211,18 +191,15 @@ SELECT
     f.city,
     f.state,
     SUM(fr.total_release_all_media) AS total_release_all_media
-FROM FacilityRelease AS fr
-JOIN Facility AS f
-    ON fr.facility_id = f.facility_id
-LEFT JOIN DocsWithSourceReduction AS d
-    ON fr.doc_ctrl_num = d.doc_ctrl_num
-WHERE d.doc_ctrl_num IS NULL
+FROM FacilityRelease AS fr, Facility AS f
+WHERE fr.facility_id = f.facility_id
+  AND fr.doc_ctrl_num NOT IN (SELECT doc_ctrl_num FROM DocsWithSourceReduction)
 GROUP BY
     fr.facility_id,
     f.facility_name,
     f.city,
     f.state
-HAVING SUM(fr.total_release_all_media) > 10000   -- threshold can be adjusted
+HAVING SUM(fr.total_release_all_media) > 10000  
 ORDER BY total_release_all_media DESC;
 
 -- Q10: For a given source reduction activity code, count implementations by state.
@@ -231,14 +208,11 @@ SELECT
     s.src_red_desc,
     f.state,
     COUNT(*) AS num_implementations
-FROM ImplementsSourceReduction AS isr
-JOIN SourceReductionActivity AS s
-    ON isr.src_red_code = s.src_red_code
-JOIN Form AS frm
-    ON isr.doc_ctrl_num = frm.doc_ctrl_num
-JOIN Facility AS f
-    ON frm.facility_id = f.facility_id
-WHERE s.src_red_code = 'S23'     -- example source reduction code (newer Sxx code)
+FROM ImplementsSourceReduction AS isr, SourceReductionActivity AS s, Form AS frm, Facility AS f
+WHERE isr.src_red_code = s.src_red_code
+  AND isr.doc_ctrl_num = frm.doc_ctrl_num
+  AND frm.facility_id = f.facility_id
+  AND s.src_red_code = 'S23'     -- example source reduction code (newer Sxx code)
   AND frm.year BETWEEN 2018 AND 2022
 GROUP BY
     s.src_red_code,
