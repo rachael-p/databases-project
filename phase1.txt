@@ -1,6 +1,6 @@
 1. Rachael Pei, Alina Pan
 2. Target domain: environmental data from the EPA toxics release inventory (TRI) about production and use of toxic chemicals.
-3. English questions our system should be able to answer
+3. Possible Questions to be Answered by the Data
 For a given reporting year, which facilities in a specified state reported to TRI, and what were their total releases across all media (air, water, land)?
 For each EPA region and year, what is the total amount of toxic releases by medium (air, water, land) for all chemicals combined?
 For each chemical in a given year, what is the total quantity released across all facilities and media, and which 10 chemicals have the largest total releases?
