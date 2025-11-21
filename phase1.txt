@@ -1,21 +1,21 @@
 1. Rachael Pei, Alina Pan
 2. Target domain: environmental data from the EPA toxics release inventory (TRI) about production and use of toxic chemicals.
 3. Possible Questions to be Answered by the Data
-For a given reporting year, which facilities in a specified state reported to TRI, and what were their total releases across all media (air, water, land)?
-For each EPA region and year, what is the total amount of toxic releases by medium (air, water, land) for all chemicals combined?
-For each chemical in a given year, what is the total quantity released across all facilities and media, and which 10 chemicals have the largest total releases?
-For carcinogenic chemicals only, what is the total amount released per state in a given year, and which states have the highest carcinogen releases?
-For PFAS chemicals, what is the average annual total release per EPA region over a specified range of years?
-For a selected facility, how have its total releases (broken down by medium) changed over time across multiple years?
-Which facilities both produce and import the same chemical in the same year, and what are the total releases for that chemical at those facilities?
-For each industry (based on NAICS or similar industry_code), what is the total toxic release in a given year, and which industries contribute the most to overall releases?
-For each chemical, how many distinct facilities and how many distinct states reported that chemical in a given year?
-For a given state and year, which chemicals have the largest total releases, and are any of them flagged as carcinogens, PFAS, or metals?
-For each POTW facility, what is the total amount of toxic chemicals transferred to it in a given year, and which 5 POTWs receive the largest total transfers?
-For each facility and year, what is the total quantity of chemicals transferred to POTWs versus the total quantity directly released to the environment (sum of air, water, and land releases)?
-Which facilities have implemented source reduction activities in a given year, what types of activities (src_red_code and description) did they adopt, and what estimated annual reduction codes did they report?
-Which facilities have large total environmental releases (above a given threshold) in a year but reported no source reduction activities for that year?
-For a specific source reduction activity code, how many implementations were reported over a range of years, and in which industries and states were these activities most commonly adopted?
+Q1: For a given reporting year, which facilities in a specified state reported to TRI, and what were their total releases across all media (air, water, land)?
+Q2: For each EPA region and year, what is the total amount of toxic releases by medium (air, water, land) for all chemicals combined?
+Q3: For each chemical in a given year, what is the total quantity released across all facilities and media, and which 10 chemicals have the largest total releases?
+Q4: For carcinogenic chemicals only, what is the total amount released per state in a given year, and which states have the highest carcinogen releases?
+Q5: For PFAS chemicals, what is the average annual total release per EPA region over a specified range of years?
+Q6: For a selected facility, how have its total releases (broken down by medium) changed over time across multiple years?
+Q7: Which facilities both produce and import the same chemical in the same year, and what are the total releases for that chemical at those facilities?
+Q8: For each industry (based on NAICS or similar industry_code), what is the total toxic release in a given year, and which industries contribute the most to overall releases?
+Q9: For each chemical, how many distinct facilities and how many distinct states reported that chemical in a given year?
+Q10: For a given state and year, which chemicals have the largest total releases, and are any of them flagged as carcinogens, PFAS, or metals?
+Q11: For each POTW facility, what is the total amount of toxic chemicals transferred to it in a given year, and which 5 POTWs receive the largest total transfers?
+Q12: For each facility and year, what is the total quantity of chemicals transferred to POTWs versus the total quantity directly released to the environment (sum of air, water, and land releases)?
+Q13: Which facilities have implemented source reduction activities in a given year, what types of activities (src_red_code and description) did they adopt, and what estimated annual reduction codes did they report?
+Q14: Which facilities have large total environmental releases (above a given threshold) in a year but reported no source reduction activities for that year?
+Q15: For a specific source reduction activity code, how many implementations were reported over a range of years, and in which industries and states were these activities most commonly adopted?
 4. Relational data model: 
    Facility(facility_id PK, facility_name, city, state, region_code FK->EPARegion, email)
    EPARegion(region_code PK, region_desc)
@@ -31,7 +31,8 @@ For a specific source reduction activity code, how many implementations were rep
    TransferredToPOTW(doc_ctrl_num FK->Form, potw_id FK->POTWFacility, potw_num, transfer_amt, PK(doc_ctrl_num, potw_num))
 5. Representative SQL statements for sample queries
 
--- Q1: For a given year and state, list all facilities and their total releases across all media.
+-- Q1 (Question 1):
+-- For a given year and state, list all facilities and their total releases across all media.
 SELECT
     f.facility_id,
     f.facility_name,
@@ -41,8 +42,8 @@ SELECT
 FROM Form AS frm, Facility AS f, ReleaseRecord AS r
 WHERE frm.facility_id = f.facility_id
   AND frm.doc_ctrl_num = r.doc_ctrl_num
-  AND frm.year = 2022          
-  AND f.state = 'MD'           
+  AND frm.year = 2022          -- change year as needed
+  AND f.state = 'MD'           -- change state as needed
 GROUP BY
     f.facility_id,
     f.facility_name,
@@ -50,7 +51,8 @@ GROUP BY
     f.state
 ORDER BY total_release_all_media DESC;
 
--- Q2: For each EPA region and medium, total toxic releases in a given year.
+-- Q2 (Question 2):
+-- For each EPA region and medium, total toxic releases in a given year.
 SELECT
     e.region_code,
     e.region_desc,
@@ -69,7 +71,8 @@ ORDER BY
     e.region_code,
     r.medium;
 
--- Q3: Top 10 chemicals by total releases in a given year (all media, all facilities).
+-- Q3 (Question 3):
+-- Top 10 chemicals by total releases in a given year (all media, all facilities).
 SELECT
     c.cas_reg_num,
     c.chem_name,
@@ -84,7 +87,8 @@ GROUP BY
 ORDER BY total_release_all_media DESC
 LIMIT 10;
 
--- Q4: Total carcinogen releases per state for a given year.
+-- Q4 (Question 4):
+-- Total carcinogen releases per state for a given year.
 SELECT
     f.state,
     SUM(r.total_release) AS total_carcinogen_release
@@ -97,7 +101,59 @@ WHERE frm.facility_id = f.facility_id
 GROUP BY f.state
 ORDER BY total_carcinogen_release DESC;
 
--- Q5: Facilities that both produce and import the same chemical in the same year.
+-- Q5 (Question 5):
+-- For PFAS chemicals, average annual total release per EPA region over a range of years.
+SELECT
+    ry.region_code,
+    ry.region_desc,
+    AVG(ry.yearly_total_release) AS avg_annual_pfas_release
+FROM (
+    SELECT
+        e.region_code,
+        e.region_desc,
+        frm.year,
+        SUM(r.total_release) AS yearly_total_release
+    FROM Form AS frm, Facility AS f, EPARegion AS e, Chemical AS c, ReleaseRecord AS r
+    WHERE frm.facility_id = f.facility_id
+      AND f.region_code = e.region_code
+      AND frm.cas_reg_num = c.cas_reg_num
+      AND frm.doc_ctrl_num = r.doc_ctrl_num
+      AND c.pfas = TRUE
+      AND frm.year BETWEEN 2018 AND 2022      -- change year range as needed
+    GROUP BY
+        e.region_code,
+        e.region_desc,
+        frm.year
+) AS ry
+GROUP BY
+    ry.region_code,
+    ry.region_desc
+ORDER BY
+    avg_annual_pfas_release DESC;
+
+-- Q6 (Question 6):
+-- For a selected facility, trend of total releases by medium over multiple years.
+SELECT
+    frm.facility_id,
+    f.facility_name,
+    frm.year,
+    r.medium,
+    SUM(r.total_release) AS total_release
+FROM Form AS frm, Facility AS f, ReleaseRecord AS r
+WHERE frm.facility_id = f.facility_id
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.facility_id = '123456789012345'   -- replace with a specific facility_id
+GROUP BY
+    frm.facility_id,
+    f.facility_name,
+    frm.year,
+    r.medium
+ORDER BY
+    frm.year,
+    r.medium;
+
+-- Q7 (Question 7):
+-- Facilities that both produce and import the same chemical in the same year.
 SELECT
     frm.facility_id,
     f.facility_name,
@@ -120,7 +176,8 @@ GROUP BY
     frm.year
 ORDER BY total_release_all_media DESC;
 
--- Q6: For each industry, total toxic release in a given year.
+-- Q8 (Question 8):
+-- For each industry, total toxic release in a given year.
 SELECT
     i.industry_code,
     i.industry_desc,
@@ -134,7 +191,8 @@ GROUP BY
     i.industry_desc
 ORDER BY total_release_all_media DESC;
 
--- Q7: For each chemical, distinct facilities and states that reported it in a given year.
+-- Q9 (Question 9):
+-- For each chemical, distinct facilities and states that reported it in a given year.
 SELECT
     c.cas_reg_num,
     c.chem_name,
@@ -149,7 +207,34 @@ GROUP BY
     c.chem_name
 ORDER BY num_facilities DESC;
 
--- Q8: Total amount transferred to each POTW in a given year, top 10 POTWs.
+-- Q10 (Question 10):
+-- For a given state and year, chemicals with the largest total releases,
+-- along with flags for carcinogen, PFAS, and metal.
+SELECT
+    c.cas_reg_num,
+    c.chem_name,
+    SUM(r.total_release) AS total_release_all_media,
+    c.carcinogen,
+    c.pfas,
+    c.metal
+FROM Form AS frm, Facility AS f, Chemical AS c, ReleaseRecord AS r
+WHERE frm.facility_id = f.facility_id
+  AND frm.cas_reg_num = c.cas_reg_num
+  AND frm.doc_ctrl_num = r.doc_ctrl_num
+  AND frm.year = 2022           
+  AND f.state = 'MD'             
+GROUP BY
+    c.cas_reg_num,
+    c.chem_name,
+    c.carcinogen,
+    c.pfas,
+    c.metal
+ORDER BY
+    total_release_all_media DESC
+LIMIT 10;                         -- the top chemicals for that state/year
+
+-- Q11 (Question 11):
+-- Total amount transferred to each POTW in a given year, top 5 POTWs.
 SELECT
     p.potw_id,
     p.potw_name,
@@ -166,9 +251,63 @@ GROUP BY
     p.potw_city,
     p.potw_state
 ORDER BY total_transfer_amt DESC
-LIMIT 10;
+LIMIT 5;
 
--- Q9: Facilities with large releases but no source reduction activities in a given year.
+-- Q12 (Question 12):
+-- For each facility and year, total transferred to POTWs vs total direct environmental releases.
+SELECT
+    f.facility_id,
+    f.facility_name,
+    frm.year,
+    -- total direct releases (sum across all media)
+    (SELECT SUM(r.total_release)
+     FROM Form AS frm2, ReleaseRecord AS r
+     WHERE frm2.facility_id = f.facility_id
+       AND frm2.year = frm.year
+       AND frm2.doc_ctrl_num = r.doc_ctrl_num
+    ) AS total_release_all_media,
+    -- total transfers to POTWs
+    (SELECT SUM(t.transfer_amt)
+     FROM Form AS frm3, TransferredToPOTW AS t
+     WHERE frm3.facility_id = f.facility_id
+       AND frm3.year = frm.year
+       AND frm3.doc_ctrl_num = t.doc_ctrl_num
+    ) AS total_transfer_to_potw
+FROM Facility AS f, Form AS frm
+WHERE frm.facility_id = f.facility_id
+GROUP BY
+    f.facility_id,
+    f.facility_name,
+    frm.year
+ORDER BY
+    f.facility_id,
+    frm.year;
+
+-- Q13 (Question 13):
+-- Facilities that have implemented source reduction activities in a given year,
+-- including activity type and estimated annual reduction codes.
+SELECT
+    frm.year,
+    frm.facility_id,
+    f.facility_name,
+    isr.activity_num,
+    s.src_red_code,
+    s.src_red_desc,
+    isr.est_annual_red_code
+FROM ImplementsSourceReduction AS isr,
+     SourceReductionActivity AS s,
+     Form AS frm,
+     Facility AS f
+WHERE isr.src_red_code = s.src_red_code
+  AND isr.doc_ctrl_num = frm.doc_ctrl_num
+  AND frm.facility_id = f.facility_id
+  AND frm.year = 2022                
+ORDER BY
+    frm.facility_id,
+    isr.activity_num;
+
+-- Q14 (Question 14):
+-- Facilities with large releases but no source reduction activities in a given year.
 WITH FacilityRelease AS (
     SELECT
         frm.doc_ctrl_num,
@@ -199,10 +338,11 @@ GROUP BY
     f.facility_name,
     f.city,
     f.state
-HAVING SUM(fr.total_release_all_media) > 10000  
+HAVING SUM(fr.total_release_all_media) > 10000   
 ORDER BY total_release_all_media DESC;
 
--- Q10: For a given source reduction activity code, count implementations by state.
+-- Q15 (Question 15):
+-- For a given source reduction activity code, count implementations by state.
 SELECT
     s.src_red_code,
     s.src_red_desc,
@@ -212,7 +352,7 @@ FROM ImplementsSourceReduction AS isr, SourceReductionActivity AS s, Form AS frm
 WHERE isr.src_red_code = s.src_red_code
   AND isr.doc_ctrl_num = frm.doc_ctrl_num
   AND frm.facility_id = f.facility_id
-  AND s.src_red_code = 'S23'     -- example source reduction code (newer Sxx code)
+  AND s.src_red_code = 'S23'     
   AND frm.year BETWEEN 2018 AND 2022
 GROUP BY
     s.src_red_code,
@@ -221,8 +361,9 @@ GROUP BY
 ORDER BY num_implementations DESC;
 
 
+
 6. Sources: https://www.epa.gov/enviro/tri-ez-search, mostly from the flat form R tables and the 'Chemical Transfers to POTW Locations' table; https://ordspub.epa.gov/ords/guideme_ext/guideme_ext/guideme/file/tri%20reporting%20codes%20for%20form%20r%20and%20form%20a%20-%20july%202022.pdf for code descriptions
-Anticipated conversion issues: we will need to create some columns ourselves and change some formatting. For instance, the total releases are listed as AirTotalRelease, LandTotalRelease, etc. but we want to create a generalized ReleaseRecord that will have an attribute for the type of medium instead, which will require some preprocessing on our part. We will also need to create numberings/relative orderings ourselves to number entites like the source reduction activities and POTWs: they are labeled as POTW 1, POTW 2, etc. in the raw data, but we will need to extract those numbers and make them an attribute instead to create generalized entitities.
+Anticipated conversion issues: we will need to create some columns ourselves and change some formatting. For instance, the total releases are listed as AirTotalRelease, LandTotalRelease, etc. but we want to create a generalized ReleaseRecord that will have an attribute for the type of medium instead, which will require some preprocessing on our part. We will also need to create numberings/relative orderings ourselves to number entities like the source reduction activities and POTWs: they are labeled as POTW 1, POTW 2, etc. in the raw data, but we will need to extract those numbers and make them an attribute instead to create generalized entities.
 7. We plan to start by querying the database directly through the MySQL command-line client / Workbench and exporting results as tabular reports (CSV or HTML tables). We will define a few SQL views to provide convenient summaries, such as a view that aggregates total releases by facility, year, and medium, and another that aggregates transfers to POTWs by year.
 For Phase II, we plan to add a simple web-based dashboard (e.g., using a lightweight Python/Flask or similar framework) that lets users filter by year, state, chemical, or industry via HTML forms, and then displays results both as tables and as basic charts (e.g., bar charts of total releases by state or medium). This interface will serve as the front end for our more advanced features such as a natural language query interface.
 8. It would be interesting to look at natural language interfaces (ex. having the user be able to type in a query in English and our system will be able to process that and create analyses/outputs).
