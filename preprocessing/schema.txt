@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS EPARegion;
 
 -- create tables
 CREATE TABLE EPARegion (
-    region_code VARCHAR(2) NOT NULL,
+    region_code CHAR(2) NOT NULL,
     region_desc VARCHAR(100),
     PRIMARY KEY (region_code)
 );
@@ -27,7 +27,7 @@ CREATE TABLE Facility (
     facility_name VARCHAR(62),
     city VARCHAR(28),
     state CHAR(2),
-    region_code VARCHAR(2),
+    region_code CHAR(2),
     email VARCHAR(100),
     PRIMARY KEY (facility_id),
     FOREIGN KEY (region_code) REFERENCES EPARegion(region_code)

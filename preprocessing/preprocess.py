@@ -168,15 +168,15 @@ def build_tables(df: pd.DataFrame):
 
     # EPA Region (code -> description)
     REGION_DESC = {
-        "01": "Region 1 — New England",
-        "02": "Region 2 — New York & New Jersey",
-        "03": "Region 3 — Mid-Atlantic",
-        "04": "Region 4 — Southeast",
-        "05": "Region 5 — Great Lakes",
-        "06": "Region 6 — South Central",
-        "07": "Region 7 — Central",
-        "08": "Region 8 — Mountains & Plains",
-        "09": "Region 9 — Pacific Southwest",
+        "1": "Region 1 — New England",
+        "2": "Region 2 — New York & New Jersey",
+        "3": "Region 3 — Mid-Atlantic",
+        "4": "Region 4 — Southeast",
+        "5": "Region 5 — Great Lakes",
+        "6": "Region 6 — South Central",
+        "7": "Region 7 — Central",
+        "8": "Region 8 — Mountains & Plains",
+        "9": "Region 9 — Pacific Southwest",
         "10": "Region 10 — Pacific Northwest",
     }
     epa_region_df = (
@@ -285,7 +285,7 @@ def build_tables(df: pd.DataFrame):
 # -----------------------------
 # Usage
 # -----------------------------
-df = load_and_clean("epa_data.csv")
+df = load_and_clean("preprocessing/raw_epa_data.csv")
 tables = build_tables(df)
 src_red_df, est_ann_red_df = build_source_reduction_lookups(SRC_RED_ACT,EST_ANNUAL_RED)
 tables["source_reduction_activity_df"] = src_red_df

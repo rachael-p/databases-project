@@ -1,5 +1,7 @@
 import os
+from fastapi import HTTPException
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "3306")
@@ -16,6 +18,13 @@ engine = create_engine(
 )
 
 def fetch_all(sql: str, params: dict):
-    with engine.connect() as conn:
-        result = conn.execute(text(sql), params)
-        return [dict(r._mapping) for r in result.fetchall()]
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(sql), params)
+            return [dict(r._mapping) for r in result.fetchall()]
+    except SQLAlchemyError as e:
+        print(f"Database error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error occurred: {str(e)}"
+        )
