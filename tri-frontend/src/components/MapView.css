@@ -1,0 +1,48 @@
+.map-container {
+  background: #f7fafc;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.map-placeholder {
+  background: #f7fafc;
+  border: 2px dashed #cbd5e0;
+  border-radius: 10px;
+  padding: 60px 20px;
+  text-align: center;
+  color: #718096;
+}
+
+.map-placeholder p {
+  font-size: 1.1em;
+  margin: 10px 0;
+}
+
+.map-note {
+  font-size: 0.9em !important;
+  color: #a0aec0;
+}
+
+.map-popup h4 {
+  margin: 0 0 10px 0;
+  color: #1a202c;
+  font-size: 1.1em;
+}
+
+.map-popup p {
+  margin: 5px 0;
+  color: #4a5568;
+  font-size: 0.9em;
+}
+
+.map-popup strong {
+  color: #2d3748;
+}
+
+/* Fix for Leaflet in React */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
