@@ -185,33 +185,33 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
 
   const endpointsByEntity: Record<EntityType, EndpointConfig[]> = {
     facilities: [
-      { key: 'facilities/top-releases', label: 'Top Facilities by Total Release', params: ['year', 'limit'] },
-      { key: 'facilities/releases-by-medium', label: 'Releases by Medium (range)', params: ['facility', 'startYear', 'endYear'] },
+      { key: 'facilities/top-releases', label: 'Top Facilities by Total Release (lbs)', params: ['year', 'limit'] },
+      { key: 'facilities/releases-by-medium', label: 'Facility Releases by Medium Over Time (Air/Water/Land)', params: ['facility', 'startYear', 'endYear'] },
     ],
     industries: [
-      { key: 'industries/releases-by-industry', label: 'Releases by Industry', params: ['year'] },
-      { key: 'industries/releases-per-medium', label: 'Releases per Medium', params: ['industry', 'startYear', 'endYear'] },
+      { key: 'industries/releases-by-industry', label: 'Total Releases by Industry Sector (lbs)', params: ['year'] },
+      { key: 'industries/releases-per-medium', label: 'Industry Releases by Medium Over Time (Air/Water/Land)', params: ['industry', 'startYear', 'endYear'] },
     ],
     chemicals: [
-      { key: 'chemicals/top-releases', label: 'Top Chemicals', params: ['year', 'limit'] },
-      { key: 'chemicals/top-carcinogens', label: 'Top Carcinogens', params: ['year', 'limit'] },
-      { key: 'chemicals/top-states', label: 'Top States for Chemical', params: ['chem', 'year', 'limit'] },
-      { key: 'chemicals/releases-over-time', label: 'Releases Over Time', params: ['chem', 'startYear', 'endYear'] },
-      { key: 'chemicals/avg-carcinogens-by-region', label: 'Avg Carcinogens by Region', params: ['year'] },
-      { key: 'chemicals/counts-over-time', label: 'Facility/State/City Counts Over Time', params: ['chem'] },
+      { key: 'chemicals/top-releases', label: 'Top Chemicals by Total Release (lbs)', params: ['year', 'limit'] },
+      { key: 'chemicals/top-carcinogens', label: 'Top Carcinogenic Chemicals (lbs)', params: ['year', 'limit'] },
+      { key: 'chemicals/top-states', label: 'States with Highest Releases for Selected Chemical (lbs)', params: ['chem', 'year', 'limit'] },
+      { key: 'chemicals/releases-over-time', label: 'Chemical Release Trends Over Time (lbs)', params: ['chem', 'startYear', 'endYear'] },
+      { key: 'chemicals/avg-carcinogens-by-region', label: 'Average PFAS Releases by EPA Region (lbs)', params: ['year'] },
+      { key: 'chemicals/counts-over-time', label: 'Number of Facilities Reporting Chemical Over Time', params: ['chem'] },
     ],
     source_reduction: [
-      { key: 'sourcered/most-effective', label: 'Most Effective Strategies', params: ['limit'] },
-      { key: 'sourcered/before-after', label: 'Before vs After Reductions', params: ['limit'] },
-      { key: 'sourcered/top-chem-by-state', label: 'Top Reduced Chemicals by State', params: ['startYear', 'endYear'] },
-      { key: 'sourcered/facility-vs-strats', label: 'Facility Strategies vs Effectiveness', params: ['facility', 'startYear', 'endYear'] },
-      { key: 'sourcered/typical-effectiveness', label: 'Typical Effectiveness per Strategy' },
+      { key: 'sourcered/most-effective', label: 'Most Effective Pollution Prevention Strategies (100% Elimination)', params: ['limit'] },
+      { key: 'sourcered/before-after', label: 'Pollution Reduction Before vs After Implementation (lbs)', params: ['limit'] },
+      { key: 'sourcered/top-chem-by-state', label: 'Most Frequently Reduced Chemicals by State (count)', params: ['startYear', 'endYear'] },
+      { key: 'sourcered/facility-vs-strats', label: 'Facility Prevention Strategies and Effectiveness', params: ['facility', 'startYear', 'endYear'] },
+      { key: 'sourcered/typical-effectiveness', label: 'Typical Effectiveness Distribution by Strategy Type (count)' },
     ],
     regions: [
-      { key: 'misc/total-per-region', label: 'Total Releases per Region', params: ['year'] },
-      { key: 'misc/top-cities-air-releases', label: 'Top Cities by Air Releases', params: ['startYear', 'endYear', 'limit'] },
-      { key: 'misc/top-industry-per-region', label: 'Top Industry per Region', params: ['year'] },
-      { key: 'misc/avg-releases-presidency', label: 'Avg Releases by Presidency' },
+      { key: 'misc/total-per-region', label: 'Total Toxic Releases by EPA Region (lbs)', params: ['year'] },
+      { key: 'misc/top-cities-air-releases', label: 'Cities with Highest Air Pollution Releases (lbs)', params: ['startYear', 'endYear', 'limit'] },
+      { key: 'misc/top-industry-per-region', label: 'Dominant Polluting Industry by EPA Region (lbs)', params: ['year'] },
+      { key: 'misc/avg-releases-presidency', label: 'Average Annual Releases by Presidential Administration (lbs)' },
     ],
   };
 
@@ -417,8 +417,10 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
         case 'facilities/releases-by-medium':
           transformedData = Object.entries(results).flatMap(([yr, rows]: any) =>
             rows.map((r: any) => ({
-              name: `${r.medium} (${yr})`,
+              name: `${yr} - ${r.medium.charAt(0).toUpperCase() + r.medium.slice(1)}`,
               value: r.total_release,
+              year: yr,
+              medium: r.medium,
             }))
           );
           break;
@@ -432,8 +434,11 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
         case 'industries/releases-per-medium':
           transformedData = Object.entries(results).flatMap(([yr, rows]: any) =>
             rows.map((r: any) => ({
-              name: `${r.medium} (${yr})`,
+              name: `${yr} - ${r.medium.charAt(0).toUpperCase() + r.medium.slice(1)}`,
               value: r.total_release,
+              year: yr,
+              medium: r.medium,
+              industry: r.industry_desc,
             }))
           );
           break;
