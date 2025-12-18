@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { 
   BarChart, Bar, PieChart, Pie, Cell,
@@ -10,10 +10,76 @@ import './VisualizationPage.css';
 interface VisualizationPageProps {
   query: string;
   onBack: () => void;
+  forcedEntity?: EntityType;
+  hideBackButton?: boolean;
+  skipAnalysis?: boolean;
+  label?: string;
+  prompts?: string[];
 }
 
 type EntityType = 'facilities' | 'chemicals' | 'source_reduction' | 'regions' | 'industries';
 type ChartType = 'bar' | 'pie' | 'map';
+type EndpointKey = string;
+
+const STATE_NAME_MAP: Record<string, string> = {
+  AL: 'Alabama',
+  AK: 'Alaska',
+  AZ: 'Arizona',
+  AR: 'Arkansas',
+  CA: 'California',
+  CO: 'Colorado',
+  CT: 'Connecticut',
+  DE: 'Delaware',
+  FL: 'Florida',
+  GA: 'Georgia',
+  HI: 'Hawaii',
+  ID: 'Idaho',
+  IL: 'Illinois',
+  IN: 'Indiana',
+  IA: 'Iowa',
+  KS: 'Kansas',
+  KY: 'Kentucky',
+  LA: 'Louisiana',
+  ME: 'Maine',
+  MD: 'Maryland',
+  MA: 'Massachusetts',
+  MI: 'Michigan',
+  MN: 'Minnesota',
+  MS: 'Mississippi',
+  MO: 'Missouri',
+  MT: 'Montana',
+  NE: 'Nebraska',
+  NV: 'Nevada',
+  NH: 'New Hampshire',
+  NJ: 'New Jersey',
+  NM: 'New Mexico',
+  NY: 'New York',
+  NC: 'North Carolina',
+  ND: 'North Dakota',
+  OH: 'Ohio',
+  OK: 'Oklahoma',
+  OR: 'Oregon',
+  PA: 'Pennsylvania',
+  RI: 'Rhode Island',
+  SC: 'South Carolina',
+  SD: 'South Dakota',
+  TN: 'Tennessee',
+  TX: 'Texas',
+  UT: 'Utah',
+  VT: 'Vermont',
+  VA: 'Virginia',
+  WA: 'Washington',
+  WV: 'West Virginia',
+  WI: 'Wisconsin',
+  WY: 'Wyoming',
+};
+
+type EndpointConfig = {
+  key: EndpointKey;
+  label: string;
+  params?: Array<'year' | 'startYear' | 'endYear' | 'limit' | 'chem' | 'facility' | 'industry'>;
+  description?: string;
+};
 
 interface DataItem {
   name: string;
@@ -57,9 +123,10 @@ const stateCoordinates: { [key: string]: { lat: number; lng: number } } = {
 
 const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'];
 
-const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) => {
+const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, forcedEntity, hideBackButton, skipAnalysis, label, prompts }) => {
   const [inputValue, setInputValue] = useState(query);
   const [selectedEntity, setSelectedEntity] = useState<EntityType>('facilities');
+  const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointKey>('');
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [topData, setTopData] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,33 +134,128 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   const [analysisConfidence, setAnalysisConfidence] = useState<string>('');
   
-  // Interactive parameters
+  // Basic params for queries
   const [year, setYear] = useState(2022);
   const [selectedState, setSelectedState] = useState<string>('all');
   const [limit, setLimit] = useState(10);
+  const [startYear, setStartYear] = useState(2015);
+  const [endYear, setEndYear] = useState(2022);
+  const [selectedChem, setSelectedChem] = useState<string>('');
+  const [selectedFacility, setSelectedFacility] = useState<string>('');
+  const [selectedIndustry, setSelectedIndustry] = useState<string>('');
+  const [selectedPrompt, setSelectedPrompt] = useState<string | undefined>(prompts?.[0]);
 
-  const states = ['all', 'CA', 'TX', 'NY', 'FL', 'IL', 'PA', 'OH', 'MI', 'GA', 'NC', 'MA', 'WA', 'AZ', 'TN', 'IN'];
-  const years = Array.from({ length: 36 }, (_, i) => 2022 - i); // 1987-2022
+  const [chemOptions, setChemOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [facilityOptions, setFacilityOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [industryOptions, setIndustryOptions] = useState<Array<{ id: string; name: string }>>([]);
 
-  // Auto-analyze query on initial load
+  // Load dropdown options
   useEffect(() => {
-    if (query && !autoAnalyzed) {
-      analyzeQuery(query);
+    const loadOptions = async () => {
+      try {
+        const [chemRes, facRes, indRes] = await Promise.all([
+          axios.get('http://localhost:8000/chemicals/names'),
+          axios.get('http://localhost:8000/facilities/names'),
+          axios.get('http://localhost:8000/industries/names'),
+        ]);
+        setChemOptions(
+          chemRes.data.results.map((c: any) => ({
+            id: c.cas_reg_num,
+            name: c.chem_name || c.cas_reg_num,
+          }))
+        );
+        setFacilityOptions(
+          facRes.data.results.map((f: any) => ({
+            id: f.facility_id,
+            name: f.facility_name || f.facility_id,
+          }))
+        );
+        setIndustryOptions(
+          indRes.data.results.map((i: any) => ({
+            id: i.industry_code,
+            name: i.industry_desc || `Industry ${i.industry_code}`,
+          }))
+        );
+      } catch (err) {
+        console.error('Error loading dropdown options', err);
+      }
+    };
+    loadOptions();
+  }, []);
+
+  const endpointsByEntity: Record<EntityType, EndpointConfig[]> = {
+    facilities: [
+      { key: 'facilities/top-releases', label: 'Top Facilities by Total Release', params: ['year', 'limit'] },
+      { key: 'facilities/releases-by-medium', label: 'Releases by Medium (range)', params: ['facility', 'startYear', 'endYear'] },
+    ],
+    industries: [
+      { key: 'industries/releases-by-industry', label: 'Releases by Industry', params: ['year'] },
+      { key: 'industries/releases-per-medium', label: 'Releases per Medium', params: ['industry', 'startYear', 'endYear'] },
+    ],
+    chemicals: [
+      { key: 'chemicals/top-releases', label: 'Top Chemicals', params: ['year', 'limit'] },
+      { key: 'chemicals/top-carcinogens', label: 'Top Carcinogens', params: ['year', 'limit'] },
+      { key: 'chemicals/top-states', label: 'Top States for Chemical', params: ['chem', 'year', 'limit'] },
+      { key: 'chemicals/releases-over-time', label: 'Releases Over Time', params: ['chem', 'startYear', 'endYear'] },
+      { key: 'chemicals/avg-carcinogens-by-region', label: 'Avg Carcinogens by Region', params: ['year'] },
+      { key: 'chemicals/counts-over-time', label: 'Facility/State/City Counts Over Time', params: ['chem'] },
+    ],
+    source_reduction: [
+      { key: 'sourcered/most-effective', label: 'Most Effective Strategies', params: ['limit'] },
+      { key: 'sourcered/before-after', label: 'Before vs After Reductions', params: ['limit'] },
+      { key: 'sourcered/top-chem-by-state', label: 'Top Reduced Chemicals by State', params: ['startYear', 'endYear'] },
+      { key: 'sourcered/facility-vs-strats', label: 'Facility Strategies vs Effectiveness', params: ['facility', 'startYear', 'endYear'] },
+      { key: 'sourcered/typical-effectiveness', label: 'Typical Effectiveness per Strategy' },
+    ],
+    regions: [
+      { key: 'misc/total-per-region', label: 'Total Releases per Region', params: ['year'] },
+      { key: 'misc/top-cities-air-releases', label: 'Top Cities by Air Releases', params: ['startYear', 'endYear', 'limit'] },
+      { key: 'misc/top-industry-per-region', label: 'Top Industry per Region', params: ['year'] },
+      { key: 'misc/avg-releases-presidency', label: 'Avg Releases by Presidency' },
+    ],
+  };
+
+  // React to incoming query/forcedEntity changes
+  useEffect(() => {
+    // Leave the input blank; still analyze the inbound query
+    setInputValue('');
+    setAutoAnalyzed(false);
+    setAnalysisConfidence('');
+    setSelectedPrompt(prompts?.[0]);
+
+    if (skipAnalysis && forcedEntity) {
+      setSelectedEntity(forcedEntity);
+      setAutoAnalyzed(true);
+      setAnalysisConfidence('');
+      return;
+    }
+
+    if (query) {
+      analyzeQuery(query, forcedEntity);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, forcedEntity]);
 
-  // Fetch data when parameters change, but only after auto-analysis is complete
+  // Reset endpoint when entity changes
   useEffect(() => {
-    // If we have an initial query and haven't analyzed it yet, wait
+    const first = endpointsByEntity[selectedEntity]?.[0];
+    if (first) {
+      setSelectedEndpoint(first.key);
+    }
+  }, [selectedEntity]);
+
+  const years = Array.from({ length: 40 }, (_, i) => 2024 - i); // simple year list
+
+  // Fetch data when entity/endpoint/params change and auto-analysis is done
+  useEffect(() => {
     if (query && !autoAnalyzed) {
-      return; // Don't fetch data yet
+      return;
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEntity, year, selectedState, limit, autoAnalyzed]);
+  }, [selectedEntity, selectedEndpoint, year, startYear, endYear, limit, selectedChem, selectedFacility, selectedIndustry, autoAnalyzed]);
 
-  const analyzeQuery = async (queryText: string) => {
+  const analyzeQuery = async (queryText: string, overrideEntity?: EntityType) => {
     try {
       setLoading(true); // Show loading during analysis
       
@@ -115,7 +277,8 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
       
       // Set entity type and mark as analyzed (this will trigger fetchData via useEffect)
       setAutoAnalyzed(true);
-      setSelectedEntity(entity_type as EntityType);
+      const detected = (overrideEntity || entity_type) as EntityType;
+      setSelectedEntity(detected);
       
       // Note: Don't set loading to false here, let fetchData handle it
     } catch (err) {
@@ -130,90 +293,257 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
-    
+
+    // fallbacks for ids
+    const chemId = selectedChem || chemOptions[0]?.id;
+    const facilityId = selectedFacility || facilityOptions[0]?.id;
+    const industryId = selectedIndustry || industryOptions[0]?.id;
+
     try {
-      if (selectedEntity === 'facilities') {
-        const params: any = { year, n: limit };
-        if (selectedState !== 'all') {
-          params.state = selectedState;
-        }
-        
-        const response = await axios.get('http://localhost:8000/facilities/top-releases', { params });
-        
-        const transformedData = response.data.results.map((item: any) => ({
-          name: item.facility_name,
-          value: item.total_release,
-          state: item.state,
-          facility_id: item.facility_id,
-          latitude: stateCoordinates[item.state]?.lat + (Math.random() - 0.5) * 2,
-          longitude: stateCoordinates[item.state]?.lng + (Math.random() - 0.5) * 2,
-        }));
-        
-        setTopData(transformedData);
-      } else if (selectedEntity === 'industries') {
-        // Fetch industries data
-        const response = await axios.get('http://localhost:8000/industries/releases-by-industry', {
-          params: { year }
-        });
-        
-        const transformedData = response.data.results.map((item: any) => ({
-          name: item.industry_desc || `Industry ${item.industry_code}`,
-          value: item.total_release,
-          industry_code: item.industry_code,
-        })).slice(0, limit);
-        
-        setTopData(transformedData);
-      } else if (selectedEntity === 'chemicals') {
-        // Fetch chemicals data
-        const response = await axios.get('http://localhost:8000/chemicals/top-releases', {
-          params: { year, n: limit }
-        });
-        
-        const transformedData = response.data.results.map((item: any) => ({
-          name: item.chem_name || item.cas_reg_num,
-          value: item.total_release,
-          carcinogen: item.carcinogen ? 'Yes' : 'No',
-          cas_reg_num: item.cas_reg_num,
-        }));
-        
-        setTopData(transformedData);
-      } else if (selectedEntity === 'source_reduction') {
-        // Fetch source reduction data - show before/after comparison
-        const response = await axios.get('http://localhost:8000/sourcered/before-after', {
-          params: { limit }
-        });
-        
-        const transformedData = response.data.results.map((item: any) => {
-          // Calculate reduction amount
-          const reduction = (item.total_release_before || 0) - (item.total_release_after || 0);
-          return {
-            name: item.src_red_desc || 'Unknown Strategy',
-            value: reduction, // Show reduction amount
+      let url = '';
+      let params: Record<string, any> = {};
+
+      switch (selectedEndpoint) {
+        case 'facilities/top-releases':
+          url = 'http://localhost:8000/facilities/top-releases';
+          params = { year, n: limit };
+          if (selectedState !== 'all') params.state = selectedState;
+          break;
+        case 'facilities/releases-by-medium':
+          url = 'http://localhost:8000/facilities/releases-by-medium';
+          if (!facilityId) throw new Error('No facility selected');
+          params = { facility_id: facilityId, start_year: startYear, end_year: endYear };
+          break;
+
+        case 'industries/releases-by-industry':
+          url = 'http://localhost:8000/industries/releases-by-industry';
+          params = { year };
+          break;
+        case 'industries/releases-per-medium':
+          url = 'http://localhost:8000/industries/releases-per-medium';
+          if (!industryId) throw new Error('No industry selected');
+          params = { industry_code: industryId, start_year: startYear, end_year: endYear };
+          break;
+
+        case 'chemicals/top-releases':
+          url = 'http://localhost:8000/chemicals/top-releases';
+          params = { year, n: limit };
+          break;
+        case 'chemicals/top-carcinogens':
+          url = 'http://localhost:8000/chemicals/top-carcinogens';
+          params = { year, n: limit };
+          break;
+        case 'chemicals/top-states':
+          url = 'http://localhost:8000/chemicals/top-states';
+          if (!chemId) throw new Error('No chemical selected');
+          params = { chem_id: chemId, year, n: limit };
+          break;
+        case 'chemicals/releases-over-time':
+          url = 'http://localhost:8000/chemicals/releases-over-time';
+          if (!chemId) throw new Error('No chemical selected');
+          params = { chem_id: chemId, start_year: startYear, end_year: endYear };
+          break;
+        case 'chemicals/avg-carcinogens-by-region':
+          url = 'http://localhost:8000/chemicals/avg-carcinogens-by-region';
+          params = { year };
+          break;
+        case 'chemicals/counts-over-time':
+          url = 'http://localhost:8000/chemicals/counts-over-time';
+          if (!chemId) throw new Error('No chemical selected');
+          params = { chem_id: chemId };
+          break;
+
+        case 'sourcered/most-effective':
+          url = 'http://localhost:8000/sourcered/most-effective';
+          params = { limit };
+          break;
+        case 'sourcered/before-after':
+          url = 'http://localhost:8000/sourcered/before-after';
+          params = { limit };
+          break;
+        case 'sourcered/top-chem-by-state':
+          url = 'http://localhost:8000/sourcered/top-chem-by-state';
+          params = { start_year: startYear, end_year: endYear };
+          break;
+        case 'sourcered/facility-vs-strats':
+          url = 'http://localhost:8000/sourcered/facility-vs-strats';
+          if (!facilityId) throw new Error('No facility selected');
+          params = { facility_id: facilityId, start_year: startYear, end_year: endYear };
+          break;
+        case 'sourcered/typical-effectiveness':
+          url = 'http://localhost:8000/sourcered/typical-effectiveness';
+          params = {};
+          break;
+
+        case 'misc/total-per-region':
+          url = 'http://localhost:8000/misc/total-per-region';
+          params = { year };
+          break;
+        case 'misc/top-cities-air-releases':
+          url = 'http://localhost:8000/misc/top-cities-air-releases';
+          params = { start_year: startYear, end_year: endYear, limit };
+          break;
+        case 'misc/top-industry-per-region':
+          url = 'http://localhost:8000/misc/top-industry-per-region';
+          params = { year };
+          break;
+        case 'misc/avg-releases-presidency':
+          url = 'http://localhost:8000/misc/avg-releases-presidency';
+          params = {};
+          break;
+
+        default:
+          setTopData(getMockData(selectedEntity));
+          setLoading(false);
+          return;
+      }
+
+      const response = await axios.get(url, { params });
+      const results = response.data.results || response.data;
+
+      let transformedData: DataItem[] = [];
+
+      switch (selectedEndpoint) {
+        case 'facilities/top-releases':
+          transformedData = results.map((item: any) => ({
+            name: item.facility_name,
+            value: item.total_release,
+            state: item.state,
+            facility_id: item.facility_id,
+            latitude: stateCoordinates[item.state]?.lat + (Math.random() - 0.5) * 2,
+            longitude: stateCoordinates[item.state]?.lng + (Math.random() - 0.5) * 2,
+          }));
+          break;
+        case 'facilities/releases-by-medium':
+          transformedData = Object.entries(results).flatMap(([yr, rows]: any) =>
+            rows.map((r: any) => ({
+              name: `${r.medium} (${yr})`,
+              value: r.total_release,
+            }))
+          );
+          break;
+        case 'industries/releases-by-industry':
+          transformedData = results.map((item: any) => ({
+            name: item.industry_desc || `Industry ${item.industry_code}`,
+            value: item.total_release,
+            industry_code: item.industry_code,
+          }));
+          break;
+        case 'industries/releases-per-medium':
+          transformedData = Object.entries(results).flatMap(([yr, rows]: any) =>
+            rows.map((r: any) => ({
+              name: `${r.medium} (${yr})`,
+              value: r.total_release,
+            }))
+          );
+          break;
+
+        case 'chemicals/top-releases':
+        case 'chemicals/top-carcinogens':
+          transformedData = results.map((item: any) => ({
+            name: item.chem_name || item.cas_reg_num,
+            value: item.total_release,
+            carcinogen: item.carcinogen ? 'Yes' : 'No',
+            cas_reg_num: item.cas_reg_num,
+          }));
+          break;
+        case 'chemicals/top-states':
+          transformedData = results.map((item: any) => ({
+            name: item.state,
+            state: item.state,
+            value: item.total_release,
+          }));
+          break;
+        case 'chemicals/releases-over-time':
+          transformedData = results.map((item: any) => ({
+            name: `${item.year}`,
+            value: item.total_release,
+          }));
+          break;
+        case 'chemicals/avg-carcinogens-by-region':
+          transformedData = results.map((item: any) => ({
+            name: `Region ${item.region_code}`,
+            value: item.avg_pfas_total,
+          }));
+          break;
+        case 'chemicals/counts-over-time':
+          transformedData = results.map((item: any) => ({
+            name: `${item.year}`,
+            value: item.num_facilities,
+          }));
+          break;
+
+        case 'sourcered/most-effective':
+          transformedData = results.map((item: any) => ({
+            name: item.src_red_desc,
+            value: item.chem_name ? 1 : 0,
+            facility_name: item.facility_name,
+            chem_name: item.chem_name,
+          }));
+          break;
+        case 'sourcered/before-after':
+          transformedData = results.map((item: any) => ({
+            name: item.src_red_desc || 'Strategy',
+            value: (item.total_release_before || 0) - (item.total_release_after || 0),
             facility_name: item.facility_name,
             chemical_name: item.chem_name,
             before: item.total_release_before,
             after: item.total_release_after,
-          };
-        });
-        
-        setTopData(transformedData);
-      } else if (selectedEntity === 'regions') {
-        // Fetch EPA regions data
-        const response = await axios.get('http://localhost:8000/misc/total-per-region', {
-          params: { year }
-        });
-        
-        const transformedData = response.data.results.map((item: any) => ({
-          name: `Region ${item.region_code}` || item.region_desc,
-          value: item.total_release,
-          region_code: item.region_code,
-        })).slice(0, limit);
-        
-        setTopData(transformedData);
-      } else {
-        // Fallback to mock data if no API available
-        setTopData(getMockData(selectedEntity));
+          }));
+          break;
+        case 'sourcered/top-chem-by-state':
+          transformedData = results.map((item: any) => ({
+            name: `${item.state} - ${item.chem_name}`,
+            value: item.occurrences,
+            state: item.state,
+          }));
+          break;
+        case 'sourcered/facility-vs-strats':
+          transformedData = results.map((item: any) => ({
+            name: `${item.src_red_desc} (${item.year})`,
+            value: item.activity_num,
+            effectiveness: item.est_annual_desc,
+            chemical: item.chem_name,
+          }));
+          break;
+        case 'sourcered/typical-effectiveness':
+          transformedData = results.map((item: any) => ({
+            name: item.src_red_desc,
+            value: 1,
+            effectiveness: item.typical_effectiveness,
+          }));
+          break;
+
+        case 'misc/total-per-region':
+          transformedData = results.map((item: any) => ({
+            name: `Region ${item.region_code}`,
+            value: item.total_release,
+          }));
+          break;
+        case 'misc/top-cities-air-releases':
+          transformedData = results.map((item: any) => ({
+            name: `${item.city}, ${item.state}`,
+            value: item.total_air_release,
+            state: item.state,
+          }));
+          break;
+        case 'misc/top-industry-per-region':
+          transformedData = results.map((item: any) => ({
+            name: `Region ${item.region_code} - ${item.industry_desc}`,
+            value: item.total_release,
+          }));
+          break;
+        case 'misc/avg-releases-presidency':
+          transformedData = results.map((item: any) => ({
+            name: `${item.president_name} (${item.party})`,
+            value: item.avg_release,
+          }));
+          break;
+        default:
+          transformedData = getMockData(selectedEntity);
       }
+
+      setTopData(transformedData);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to fetch data from API. Using mock data.');
@@ -285,11 +615,64 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
 
   const handleNewSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Re-analyze the updated query
+    // Re-analyze the updated query (unless analysis is skipped)
     if (inputValue) {
       setAutoAnalyzed(false);
-      analyzeQuery(inputValue);
+      if (skipAnalysis && forcedEntity) {
+        setSelectedEntity(forcedEntity);
+        setAutoAnalyzed(true);
+      } else {
+        analyzeQuery(inputValue, forcedEntity);
+      }
     }
+  };
+
+  const handlePromptClick = (prompt: string) => {
+    setSelectedPrompt(prompt);
+    setInputValue(prompt);
+    setAutoAnalyzed(false);
+    if (skipAnalysis && forcedEntity) {
+      setSelectedEntity(forcedEntity);
+      setAutoAnalyzed(true);
+    } else {
+      analyzeQuery(prompt, forcedEntity);
+    }
+  };
+
+  const DEFAULT_PROMPTS: Record<EntityType, string[]> = {
+    chemicals: [
+      'Show top chemicals by release in 2022',
+      'Which chemicals released the most in Texas last year?',
+      'Top states for benzene in 2020',
+    ],
+    source_reduction: [
+      'Show before vs after emissions for source reductions',
+      'List most effective source reduction strategies',
+      'Which chemicals were most reduced by state between 2010 and 2020?',
+    ],
+    facilities: [
+      'Top facilities by total releases in 2022',
+      'Top facilities in California by releases',
+      'Releases by medium for facility X over time',
+    ],
+    industries: [
+      'Show releases by industry in 2022',
+      'Which industry releases the most overall?',
+      'Releases per medium for industry 325 over time',
+    ],
+    regions: [
+      'Show total releases by EPA region for 2020',
+      'Cities with most air releases between 2010 and 2020',
+      'Average releases by presidency',
+    ],
+  };
+
+  const entityLabelMap: Record<EntityType, string> = {
+    chemicals: 'Chemicals',
+    source_reduction: 'Source Reductions',
+    facilities: 'Facilities',
+    industries: 'Industries',
+    regions: 'Miscellaneous',
   };
 
   const entityButtons: { type: EntityType; label: string; icon: string }[] = [
@@ -297,109 +680,68 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
     { type: 'source_reduction', label: 'Source Reduction', icon: '♻️' },
     { type: 'facilities', label: 'Facilities', icon: '🏭' },
     { type: 'industries', label: 'Industries', icon: '🏢' },
-    { type: 'regions', label: 'EPA Regions', icon: '🗺️' },
+    { type: 'regions', label: 'Miscellaneous', icon: '🗺️' },
   ];
 
-  const chartButtons: { type: ChartType; label: string; icon: string }[] = [
-    { type: 'bar', label: 'Bar Chart', icon: '📊' },
-    { type: 'pie', label: 'Pie Chart', icon: '🥧' },
-    { type: 'map', label: 'Map View', icon: '🗺️' },
+  const chartButtons: { type: ChartType; label: string}[] = [
+    { type: 'bar', label: 'Bar Chart'},
+    { type: 'pie', label: 'Pie Chart'},
+    { type: 'map', label: 'Map View'},
   ];
+
+  const UNIT_MAP: Record<EndpointKey, string> = {
+    // Facilities
+    'facilities/top-releases': 'lbs',
+    'facilities/releases-by-medium': 'lbs',
+    // Industries
+    'industries/releases-by-industry': 'lbs',
+    'industries/releases-per-medium': 'lbs',
+    // Chemicals
+    'chemicals/top-releases': 'lbs',
+    'chemicals/top-carcinogens': 'lbs',
+    'chemicals/top-states': 'lbs',
+    'chemicals/releases-over-time': 'lbs',
+    'chemicals/avg-carcinogens-by-region': 'lbs',
+    'chemicals/counts-over-time': 'count',
+    // Source reductions
+    'sourcered/most-effective': 'count',
+    'sourcered/before-after': 'lbs',
+    'sourcered/top-chem-by-state': 'count',
+    'sourcered/facility-vs-strats': 'count',
+    'sourcered/typical-effectiveness': 'count',
+    // Misc/regions
+    'misc/total-per-region': 'lbs',
+    'misc/top-cities-air-releases': 'lbs',
+    'misc/top-industry-per-region': 'lbs',
+    'misc/avg-releases-presidency': 'lbs',
+  };
+
+  const unitLabel = useMemo(() => UNIT_MAP[selectedEndpoint] || 'value', [selectedEndpoint]);
+
+  const currentEndpointLabel = useMemo(() => {
+    const match = (endpointsByEntity[selectedEntity] || []).find((ep) => ep.key === selectedEndpoint);
+    return match?.label || 'Results';
+  }, [selectedEndpoint, selectedEntity]);
+
+  const formatLabel = (value: string) => {
+    if (typeof value !== 'string') return value;
+    return value.length > 18 ? `${value.slice(0, 18)}…` : value;
+  };
 
   return (
     <div className="visualization-page">
       <div className="viz-header">
-        <button className="back-button" onClick={onBack}>
-          ← Back to Home
-        </button>
-        <h1>TRI Data Visualization</h1>
+        {!hideBackButton && (
+          <button className="back-button" onClick={onBack}>
+            ← Back to Home
+          </button>
+        )}
       </div>
 
+      {/* Query Categories */}
       <div className="viz-container">
-        {/* Query Input */}
-        <form onSubmit={handleNewSearch} className="query-form-viz">
-          <input
-            type="text"
-            className="nli-query-input-viz"
-            placeholder="Enter your query..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-          />
-          <button type="submit" className="submit-button-viz">
-            Update
-          </button>
-        </form>
-
-        {/* Interactive Parameters */}
-        <div className="parameters-section">
-          <h3>🎛️ Interactive Parameters</h3>
-          <div className="parameter-controls">
-            <div className="parameter-group">
-              <label htmlFor="year-select">Year:</label>
-              <select 
-                id="year-select"
-                value={year} 
-                onChange={(e) => setYear(Number(e.target.value))}
-                className="parameter-select"
-              >
-                {years.map(y => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="parameter-group">
-              <label htmlFor="state-select">State:</label>
-              <select 
-                id="state-select"
-                value={selectedState} 
-                onChange={(e) => setSelectedState(e.target.value)}
-                className="parameter-select"
-              >
-                {states.map(state => (
-                  <option key={state} value={state}>
-                    {state === 'all' ? 'All States' : state}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="parameter-group">
-              <label htmlFor="limit-select">Show Top:</label>
-              <select 
-                id="limit-select"
-                value={limit} 
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="parameter-select"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-
-            <button onClick={fetchData} className="refresh-button">
-              🔄 Refresh Data
-            </button>
-          </div>
-        </div>
-
-        {/* Auto-Analysis Result */}
-        {autoAnalyzed && analysisConfidence && (
-          <div className="analysis-result">
-            <span className="analysis-icon">🤖</span>
-            <strong>AI Analysis:</strong> Detected query type as <strong>{selectedEntity}</strong>
-            {analysisConfidence === 'high' && ' (High confidence ✅)'}
-            {analysisConfidence === 'medium' && ' (Medium confidence ⚠️)'}
-            {analysisConfidence === 'low' && ' (Low confidence ⚠️)'}
-            <span className="analysis-hint"> - Or choose a different view below:</span>
-          </div>
-        )}
-
-        {/* Entity Type Buttons - Quick View Filters */}
+        <h1 className="viz-header">{'TRI Data Explorer Presets'}</h1>
         <div className="entity-section">
-          <h3>🔍 Quick View (Optional)</h3>
           <div className="entity-buttons">
             {entityButtons.map((btn) => (
               <button
@@ -414,6 +756,168 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
           </div>
         </div>
 
+
+        {/* Auto-Analysis Result */}
+        {!skipAnalysis && autoAnalyzed && analysisConfidence && (
+          <div className="analysis-result">
+            <span className="analysis-icon">🤖</span>
+            <strong>AI Analysis:</strong> Detected query type as <strong>{selectedEntity}</strong>
+            {analysisConfidence === 'high' && ' (High confidence)'}
+            {analysisConfidence === 'medium' && ' (Medium confidence)'}
+            {analysisConfidence === 'low' && ' (Low confidence)'}
+            <span className="analysis-hint"> - Or choose a different view below:</span>
+          </div>
+        )}
+
+        {/* Endpoint selector */}
+        <div className="parameters-section">
+          <h3>Choose A Query</h3>
+          <div className="parameter-controls">
+            <div className="parameter-group">
+              <label htmlFor="endpoint-select">Query:</label>
+              <select
+                id="endpoint-select"
+                value={selectedEndpoint}
+                onChange={(e) => setSelectedEndpoint(e.target.value)}
+                className="parameter-select"
+              >
+                {(endpointsByEntity[selectedEntity] || []).map((ep) => (
+                  <option key={ep.key} value={ep.key}>
+                    {ep.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dynamic params */}
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('chem') && (
+              <div className="parameter-group">
+                <label htmlFor="chem-select">Chemical:</label>
+                <select
+                  id="chem-select"
+                  value={selectedChem || chemOptions[0]?.id || ''}
+                  onChange={(e) => setSelectedChem(e.target.value)}
+                  className="parameter-select"
+                >
+                  {chemOptions.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('facility') && (
+              <div className="parameter-group">
+                <label htmlFor="facility-select">Facility:</label>
+                <select
+                  id="facility-select"
+                  value={selectedFacility || facilityOptions[0]?.id || ''}
+                  onChange={(e) => setSelectedFacility(e.target.value)}
+                  className="parameter-select"
+                >
+                  {facilityOptions.map((f) => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('industry') && (
+              <div className="parameter-group">
+                <label htmlFor="industry-select">Industry:</label>
+                <select
+                  id="industry-select"
+                  value={selectedIndustry || industryOptions[0]?.id || ''}
+                  onChange={(e) => setSelectedIndustry(e.target.value)}
+                  className="parameter-select"
+                >
+                  {industryOptions.map((i) => (
+                    <option key={i.id} value={i.id}>{i.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('year') && (
+              <div className="parameter-group">
+                <label htmlFor="year-select">Year:</label>
+                <select
+                  id="year-select"
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                  className="parameter-select"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('startYear') && (
+              <div className="parameter-group">
+                <label htmlFor="start-year-select">Start Year:</label>
+                <select
+                  id="start-year-select"
+                  value={startYear}
+                  onChange={(e) => setStartYear(Number(e.target.value))}
+                  className="parameter-select"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('endYear') && (
+              <div className="parameter-group">
+                <label htmlFor="end-year-select">End Year:</label>
+                <select
+                  id="end-year-select"
+                  value={endYear}
+                  onChange={(e) => setEndYear(Number(e.target.value))}
+                  className="parameter-select"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('limit') && (
+              <div className="parameter-group">
+                <label htmlFor="limit-select">Limit:</label>
+                <select
+                  id="limit-select"
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  className="parameter-select"
+                >
+                  {[5, 10, 25, 50, 100].map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Query Input */}
+        <form onSubmit={handleNewSearch} className="query-form-viz">
+          <input
+            type="text"
+            className="nli-query-input-viz"
+            placeholder="Have another question? Enter it here..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+          />
+          <button type="submit" className="submit-button-viz">
+            Search
+          </button>
+        </form>
+
         {/* Chart Type Selection */}
         <div className="chart-type-buttons">
           {chartButtons.map((btn) => (
@@ -423,22 +927,9 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
               onClick={() => setChartType(btn.type)}
               disabled={btn.type === 'map' && !['facilities'].includes(selectedEntity)}
             >
-              <span className="chart-icon">{btn.icon}</span>
               {btn.label}
             </button>
           ))}
-        </div>
-
-        {/* Map View Availability Notice */}
-        {!['facilities'].includes(selectedEntity) && (
-          <div className="map-notice">
-            ℹ️ Map view is only available for <strong>Facilities</strong> (requires geographic coordinates)
-          </div>
-        )}
-
-        {/* Data Source Notice */}
-        <div className="data-source-notice">
-          <span className="real-data">✅ Showing <strong>Real Data</strong> from EPA TRI Database</span>
         </div>
 
         {loading && <div className="loading">Loading data...</div>}
@@ -448,65 +939,99 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
           <div className="results-section">
             {/* Top List */}
             <div className="top-list-section">
-              <h2>Top {limit} {selectedEntity.charAt(0).toUpperCase() + selectedEntity.slice(1).replace('_', ' ')}</h2>
-              <div className="top-list">
-                {topData.slice(0, limit).map((item, index) => (
-                  <div key={index} className="list-item">
-                    <span className="rank">#{index + 1}</span>
-                    <div className="item-info">
-                      <span className="item-name">{item.name}</span>
-                      {item.state && <span className="item-detail">State: {item.state}</span>}
-                      {item.carcinogen && <span className="item-detail">Carcinogen: {item.carcinogen}</span>}
+              <h2>{currentEndpointLabel}</h2>
+              {topData.length === 0 ? (
+                <div className="no-data">No data available</div>
+              ) : (
+                <div className="top-list">
+                  {topData.slice(0, limit).map((item, index) => (
+                    <div key={index} className="list-item">
+                      <span className="rank">#{index + 1}</span>
+                      <div className="item-info">
+                        {(() => {
+                          const stateName = item.state && STATE_NAME_MAP[item.state] ? STATE_NAME_MAP[item.state] : item.state;
+                          let displayName = item.name;
+                          const statePrefixMatch = typeof displayName === 'string' && displayName.match(/^([A-Z]{2})(\s*-\s*)(.+)/);
+                          if (statePrefixMatch) {
+                            const mapped = STATE_NAME_MAP[statePrefixMatch[1]] || statePrefixMatch[1];
+                            displayName = `${mapped}${statePrefixMatch[2]}${statePrefixMatch[3]}`;
+                          }
+                          return (
+                            <>
+                              <span className="item-name">{displayName}</span>
+                              {stateName && <span className="item-detail">State: {stateName}</span>}
+                              {item.carcinogen && <span className="item-detail">Carcinogen: {item.carcinogen}</span>}
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <span className="item-value">
+                        {item.value.toLocaleString()} {unitLabel !== 'value' ? unitLabel : ''}
+                      </span>
                     </div>
-                    <span className="item-value">{item.value.toLocaleString()} lbs</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Visualization */}
-            <div className="chart-section">
+            <div className="top-list-section">
               <h2>Visual Analysis</h2>
-              
+              <div className="chart-section">
               {chartType === 'bar' && (
-                <ResponsiveContainer width="100%" height={400}>
+                <ResponsiveContainer width="100%" height={520}>
                   <BarChart data={topData.slice(0, limit)} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="name" 
-                      angle={-45} 
+                      angle={-25} 
                       textAnchor="end" 
-                      height={100}
+                      height={90}
                       interval={0}
+                      tickMargin={12}
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={formatLabel}
                     />
-                    <YAxis label={{ value: 'Total Release (lbs)', angle: -90, position: 'insideLeft' }} />
+                    <YAxis label={{ value: unitLabel, angle: -90, position: 'insideLeft' }} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" fill="#667eea" name="Total Release (lbs)" />
+                    <Bar dataKey="value" fill="#667eea" name={unitLabel} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
 
               {chartType === 'pie' && (
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={topData.slice(0, limit)}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={120}
-                      label={(entry) => `${entry.name}: ${((entry.value / topData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%`}
+                <div className="chart-center">
+                  <ResponsiveContainer width="90%" height={520}>
+                    <PieChart>
+                      <Pie
+                        data={topData.slice(0, limit)}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={130}
+                      innerRadius={50}
+                      labelLine={false}
+                      label={({ name, percent }) => {
+                        const pct = percent ?? 0;
+                        return `${formatLabel(name || '')}: ${(pct * 100).toFixed(1)}%`;
+                      }}
                     >
                       {topData.slice(0, limit).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                    <Tooltip
+                      formatter={(value: any, name: any, entry: any) => {
+                        const pct = entry && typeof entry.percent === 'number' ? entry.percent * 100 : 0;
+                        const label = entry && entry.name ? entry.name : name;
+                        return [`${pct.toFixed(1)}%`, formatLabel(label || '')];
+                      }}
+                    />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               )}
 
               {chartType === 'map' && selectedEntity === 'facilities' && (
@@ -520,20 +1045,10 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
                   facility_id: item.facility_id
                 }))} />
               )}
+              </div>
             </div>
           </div>
         )}
-
-        {/* Info Panel */}
-        <div className="info-panel">
-          <h3>💡 Current Selection</h3>
-          <p><strong>Query:</strong> {inputValue}</p>
-          <p><strong>Entity Type:</strong> {selectedEntity.replace('_', ' ')}</p>
-          <p><strong>Year:</strong> {year}</p>
-          <p><strong>State:</strong> {selectedState === 'all' ? 'All States' : selectedState}</p>
-          <p><strong>Showing:</strong> Top {limit} results</p>
-          <p><strong>Chart Type:</strong> {chartType === 'bar' ? 'Bar Chart' : chartType === 'pie' ? 'Pie Chart' : 'Map View'}</p>
-        </div>
       </div>
     </div>
   );

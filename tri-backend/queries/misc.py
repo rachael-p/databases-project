@@ -51,7 +51,8 @@ WHERE i.industry_code = ir.industry_code
   SELECT MAX(total_release)
   FROM industry_release sub
   WHERE sub.region_code = ir.region_code
-);
+)
+ORDER BY ir.total_release DESC;
 """
 
 AVG_RELEASES_PRESIDENCY = """

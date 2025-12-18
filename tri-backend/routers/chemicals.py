@@ -84,14 +84,3 @@ def counts_over_time(
         {"chem_id": chem_id},
     )
     return {"count": len(rows), "results": rows}
-
-# returns number of facilities, states, and cities that reported releases for a chemical over time
-@router.get("/counts-over-time")
-def counts_over_time(
-    chem_id: str = Query(min_length=1),
-):
-    rows = fetch_all(
-        queries.NUM_FACILITIES_STATES_CITIES_OVER_TIME,
-        {"chem_id": chem_id},
-    )
-    return {"count": len(rows), "results": rows}

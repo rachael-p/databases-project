@@ -4,7 +4,7 @@ Full-stack project for exploring EPA TRI data. The repo includes:
 - React frontend (`tri-frontend`)
 - Docker Compose config to run DB, API, and frontend together
 
-## Run with Docker (recommended)
+## Run with Docker
 Prereqs: Docker + Docker Compose.
 
 1) Create a `.env` file in the repo root (used by `docker-compose.yml`) following the keys in `.env.example`:

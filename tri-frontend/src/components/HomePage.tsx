@@ -3,9 +3,10 @@ import './HomePage.css';
 
 interface HomePageProps {
   onQuerySubmit: (query: string) => void;
+  onNavigateSection: (section: 'chemicals' | 'sourceReductions' | 'facilities' | 'industries' | 'misc') => void;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit }) => {
+const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit, onNavigateSection }) => {
   const [inputValue, setInputValue] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,9 +21,8 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit }) => {
   };
 
   const exampleQueries = [
+    "Show releases by industry in 2024",
     "Show top 10 chemicals by release in 2022",
-    "Show releases by industry in 2022",
-    "Show top 10 facilities in California",
     "Show total releases by EPA region"
   ];
 
@@ -65,28 +65,33 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit }) => {
         </div>
 
         <div className="info-section">
-          <h3>What can you explore?</h3>
+          <h3>Or explore our preset queries:</h3>
           <div className="info-cards">
-            <div className="info-card">
-              <span className="info-icon">🏭</span>
-              <h4>Facilities</h4>
-              <p>Industrial facilities reporting toxic releases</p>
-            </div>
-            <div className="info-card">
+            <button className="info-card" onClick={() => onNavigateSection('chemicals')}>
               <span className="info-icon">⚗️</span>
               <h4>Chemicals</h4>
               <p>Toxic chemicals and their properties</p>
-            </div>
-            <div className="info-card">
+            </button>
+            <button className="info-card" onClick={() => onNavigateSection('sourceReductions')}>
               <span className="info-icon">♻️</span>
-              <h4>Source Reduction</h4>
+              <h4>Source Reductions</h4>
               <p>Pollution prevention activities</p>
-            </div>
-            <div className="info-card">
+            </button>
+            <button className="info-card" onClick={() => onNavigateSection('facilities')}>
+              <span className="info-icon">🏭</span>
+              <h4>Facilities</h4>
+              <p>Industrial facilities reporting toxic releases</p>
+            </button>
+            <button className="info-card" onClick={() => onNavigateSection('industries')}>
+              <span className="info-icon">🏢</span>
+              <h4>Industries</h4>
+              <p>Sector-level release trends</p>
+            </button>
+            <button className="info-card" onClick={() => onNavigateSection('misc')}>
               <span className="info-icon">📊</span>
-              <h4>EPA Regions</h4>
-              <p>Regional release data and trends</p>
-            </div>
+              <h4>Misc</h4>
+              <p>Regional and presidency-based views</p>
+            </button>
           </div>
         </div>
       </div>
@@ -95,4 +100,3 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit }) => {
 };
 
 export default HomePage;
-

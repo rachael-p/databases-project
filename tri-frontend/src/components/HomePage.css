@@ -8,7 +8,7 @@
 }
 
 .home-container {
-  max-width: 1000px;
+  max-width: 1100px;
   width: 100%;
   background: white;
   border-radius: 20px;
@@ -79,9 +79,10 @@
 
 .examples-title {
   color: #4a5568;
-  font-size: 1em;
-  margin-bottom: 15px;
+  font-size: 20px;
+  margin-bottom: 20px;
   text-align: center;
+  font-weight: bold;
 }
 
 .examples-grid {
@@ -91,14 +92,14 @@
 }
 
 .example-button {
-  padding: 15px 20px;
+  padding: 20px 20px;
   background: #f7fafc;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
   color: #4a5568;
   cursor: pointer;
   transition: all 0.3s;
-  text-align: left;
+  text-align: center;
   font-size: 0.95em;
 }
 
@@ -111,19 +112,19 @@
 }
 
 .info-section {
-  margin-top: 60px;
+  margin-top: 20px;
 }
 
 .info-section h3 {
   text-align: center;
   color: #1a202c;
-  font-size: 1.8em;
-  margin-bottom: 30px;
+  font-size: 1.5em;
+  margin-bottom: 20px;
 }
 
 .info-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(5, 1fr); 
   gap: 20px;
 }
 
@@ -133,6 +134,9 @@
   border-radius: 15px;
   text-align: center;
   transition: transform 0.3s;
+  border: none;
+  cursor: pointer;
+  color: inherit;
 }
 
 .info-card:hover {
@@ -154,6 +158,5 @@
 
 .info-card p {
   color: #718096;
-  font-size: 0.9em;
+  font-size: 1em;
 }
-
