@@ -235,8 +235,8 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
 
   // React to incoming query/forcedEntity changes
   useEffect(() => {
-    // Leave the input blank; still analyze the inbound query
-    setInputValue('');
+    // For LLM-driven view, show the submitted query; for category presets, keep blank
+    setInputValue(skipAnalysis ? '' : query);
     setAutoAnalyzed(false);
     setAnalysisConfidence('');
     setSelectedPrompt(prompts?.[0]);
@@ -757,17 +757,17 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
 
   const entityLabelMap: Record<EntityType, string> = {
     chemicals: 'Chemicals',
-    source_reduction: 'Source Reductions',
     facilities: 'Facilities',
     industries: 'Industries',
+    source_reduction: 'Source Reductions',
     regions: 'Miscellaneous',
   };
 
   const entityButtons: { type: EntityType; label: string; icon: string }[] = [
     { type: 'chemicals', label: 'Chemicals', icon: '⚗️' },
-    { type: 'source_reduction', label: 'Source Reduction', icon: '♻️' },
     { type: 'facilities', label: 'Facilities', icon: '🏭' },
     { type: 'industries', label: 'Industries', icon: '🏢' },
+    { type: 'source_reduction', label: 'Source Reduction', icon: '♻️' },
     { type: 'regions', label: 'Miscellaneous', icon: '🗺️' },
   ];
 
@@ -859,6 +859,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
         )}
       </div>
 
+<<<<<<< Updated upstream
       {/* Query Categories */}
       <div className="viz-container">
         <h1 className="viz-header">{'TRI Data Explorer Presets'}</h1>
@@ -919,140 +920,179 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
                   <option key={ep.key} value={ep.key}>
                     {ep.label}
                   </option>
+=======
+        {skipAnalysis ? (
+          <>
+            <h1 className="viz-header">{'TRI Data Explorer Presets'}</h1>
+            <div className="entity-section">
+              <div className="entity-buttons">
+                {entityButtons.map((btn) => (
+                  <button
+                    key={btn.type}
+                    className={`entity-button ${selectedEntity === btn.type ? 'active' : ''}`}
+                    onClick={() => setSelectedEntity(btn.type)}
+                  >
+                    <span className="entity-icon">{btn.icon}</span>
+                    {btn.label}
+                  </button>
+>>>>>>> Stashed changes
                 ))}
-              </select>
+              </div>
             </div>
 
-            {/* Dynamic params */}
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('chem') && (
-              <div className="parameter-group">
-                <label htmlFor="chem-select">Chemical:</label>
-                <select
-                  id="chem-select"
-                  value={selectedChem || chemOptions[0]?.id || ''}
-                  onChange={(e) => setSelectedChem(e.target.value)}
-                  className="parameter-select"
-                >
-                  {chemOptions.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="parameters-section">
+              <h3>Choose A Query</h3>
+              <div className="parameter-controls">
+                <div className="parameter-group">
+                  <label htmlFor="endpoint-select">Query:</label>
+                  <select
+                    id="endpoint-select"
+                    value={selectedEndpoint}
+                    onChange={(e) => setSelectedEndpoint(e.target.value)}
+                    className="parameter-select"
+                  >
+                    {(endpointsByEntity[selectedEntity] || []).map((ep) => (
+                      <option key={ep.key} value={ep.key}>
+                        {ep.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('facility') && (
-              <div className="parameter-group">
-                <label htmlFor="facility-select">Facility:</label>
-                <select
-                  id="facility-select"
-                  value={selectedFacility || facilityOptions[0]?.id || ''}
-                  onChange={(e) => setSelectedFacility(e.target.value)}
-                  className="parameter-select"
-                >
-                  {facilityOptions.map((f) => (
-                    <option key={f.id} value={f.id}>{f.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+                {/* Dynamic params */}
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('chem') && (
+                  <div className="parameter-group">
+                    <label htmlFor="chem-select">Chemical:</label>
+                    <select
+                      id="chem-select"
+                      value={selectedChem || chemOptions[0]?.id || ''}
+                      onChange={(e) => setSelectedChem(e.target.value)}
+                      className="parameter-select"
+                    >
+                      {chemOptions.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('industry') && (
-              <div className="parameter-group">
-                <label htmlFor="industry-select">Industry:</label>
-                <select
-                  id="industry-select"
-                  value={selectedIndustry || industryOptions[0]?.id || ''}
-                  onChange={(e) => setSelectedIndustry(e.target.value)}
-                  className="parameter-select"
-                >
-                  {industryOptions.map((i) => (
-                    <option key={i.id} value={i.id}>{i.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('facility') && (
+                  <div className="parameter-group">
+                    <label htmlFor="facility-select">Facility:</label>
+                    <select
+                      id="facility-select"
+                      value={selectedFacility || facilityOptions[0]?.id || ''}
+                      onChange={(e) => setSelectedFacility(e.target.value)}
+                      className="parameter-select"
+                    >
+                      {facilityOptions.map((f) => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('year') && (
-              <div className="parameter-group">
-                <label htmlFor="year-select">Year:</label>
-                <select
-                  id="year-select"
-                  value={year}
-                  onChange={(e) => setYear(Number(e.target.value))}
-                  className="parameter-select"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('industry') && (
+                  <div className="parameter-group">
+                    <label htmlFor="industry-select">Industry:</label>
+                    <select
+                      id="industry-select"
+                      value={selectedIndustry || industryOptions[0]?.id || ''}
+                      onChange={(e) => setSelectedIndustry(e.target.value)}
+                      className="parameter-select"
+                    >
+                      {industryOptions.map((i) => (
+                        <option key={i.id} value={i.id}>{i.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('startYear') && (
-              <div className="parameter-group">
-                <label htmlFor="start-year-select">Start Year:</label>
-                <select
-                  id="start-year-select"
-                  value={startYear}
-                  onChange={(e) => setStartYear(Number(e.target.value))}
-                  className="parameter-select"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('year') && (
+                  <div className="parameter-group">
+                    <label htmlFor="year-select">Year:</label>
+                    <select
+                      id="year-select"
+                      value={year}
+                      onChange={(e) => setYear(Number(e.target.value))}
+                      className="parameter-select"
+                    >
+                      {years.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('endYear') && (
-              <div className="parameter-group">
-                <label htmlFor="end-year-select">End Year:</label>
-                <select
-                  id="end-year-select"
-                  value={endYear}
-                  onChange={(e) => setEndYear(Number(e.target.value))}
-                  className="parameter-select"
-                >
-                  {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('startYear') && (
+                  <div className="parameter-group">
+                    <label htmlFor="start-year-select">Start Year:</label>
+                    <select
+                      id="start-year-select"
+                      value={startYear}
+                      onChange={(e) => setStartYear(Number(e.target.value))}
+                      className="parameter-select"
+                    >
+                      {years.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('limit') && (
-              <div className="parameter-group">
-                <label htmlFor="limit-select">Limit:</label>
-                <select
-                  id="limit-select"
-                  value={limit}
-                  onChange={(e) => setLimit(Number(e.target.value))}
-                  className="parameter-select"
-                >
-                  {[5, 10, 25, 50, 100].map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('endYear') && (
+                  <div className="parameter-group">
+                    <label htmlFor="end-year-select">End Year:</label>
+                    <select
+                      id="end-year-select"
+                      value={endYear}
+                      onChange={(e) => setEndYear(Number(e.target.value))}
+                      className="parameter-select"
+                    >
+                      {years.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('countMetric') && (
-              <div className="parameter-group">
-                <label htmlFor="count-metric-select">Count metric:</label>
-                <select
-                  id="count-metric-select"
-                  value={countMetric}
-                  onChange={(e) => setCountMetric(e.target.value as 'num_facilities' | 'num_states' | 'num_cities')}
-                  className="parameter-select"
-                >
-                  <option value="num_facilities">Facilities</option>
-                  <option value="num_states">States</option>
-                  <option value="num_cities">Cities</option>
-                </select>
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('limit') && (
+                  <div className="parameter-group">
+                    <label htmlFor="limit-select">Limit:</label>
+                    <select
+                      id="limit-select"
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value))}
+                      className="parameter-select"
+                    >
+                      {[5, 10, 25, 50, 100].map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('countMetric') && (
+                  <div className="parameter-group">
+                    <label htmlFor="count-metric-select">Count metric:</label>
+                    <select
+                      id="count-metric-select"
+                      value={countMetric}
+                      onChange={(e) => setCountMetric(e.target.value as 'num_facilities' | 'num_states' | 'num_cities')}
+                      className="parameter-select"
+                    >
+                      <option value="num_facilities">Facilities</option>
+                      <option value="num_states">States</option>
+                      <option value="num_cities">Cities</option>
+                    </select>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        ) : (
+          <h1 className="submitted-query-heading">Submitted query: {query || inputValue || 'Enter a query to analyze'}</h1>
+        )}
 
         {/* Query Input */}
         <form onSubmit={handleNewSearch} className="query-form-viz">
@@ -1060,7 +1100,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
             type="text"
             className="nli-query-input-viz"
             placeholder="Have another question? Enter it here..."
-            value={inputValue}
+            value={''}
             onChange={(e) => setInputValue(e.target.value)}
           />
           <button type="submit" className="submit-button-viz">
@@ -1217,7 +1257,6 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
           </div>
         )}
       </div>
-    </div>
   );
 };
 

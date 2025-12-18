@@ -18,6 +18,7 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit, onNavigateSection })
 
   const handleExampleClick = (example: string) => {
     setInputValue(example);
+    onQuerySubmit(example);
   };
 
   const exampleQueries = [
@@ -72,11 +73,6 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit, onNavigateSection })
               <h4>Chemicals</h4>
               <p>Toxic chemicals and their properties</p>
             </button>
-            <button className="info-card" onClick={() => onNavigateSection('sourceReductions')}>
-              <span className="info-icon">♻️</span>
-              <h4>Source Reductions</h4>
-              <p>Pollution prevention activities</p>
-            </button>
             <button className="info-card" onClick={() => onNavigateSection('facilities')}>
               <span className="info-icon">🏭</span>
               <h4>Facilities</h4>
@@ -86,6 +82,11 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit, onNavigateSection })
               <span className="info-icon">🏢</span>
               <h4>Industries</h4>
               <p>Sector-level release trends</p>
+            </button>
+            <button className="info-card" onClick={() => onNavigateSection('sourceReductions')}>
+              <span className="info-icon">♻️</span>
+              <h4>Source Reductions</h4>
+              <p>Pollution prevention activities</p>
             </button>
             <button className="info-card" onClick={() => onNavigateSection('misc')}>
               <span className="info-icon">📊</span>

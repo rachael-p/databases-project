@@ -143,6 +143,27 @@
   box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.15);
 }
 
+.query-chip {
+  padding: 12px 16px;
+  border: 2px solid #667eea;
+  border-radius: 10px;
+  background: white;
+  color: #1a202c;
+  font-weight: 600;
+  min-width: 240px;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.25);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.submitted-query-heading {
+  font-size: 1.6rem;
+  margin: 16px 0 24px;
+  padding: 8px 8px;
+  border-radius: 10px;
+}
+
 .refresh-button {
   padding: 10px 20px;
   background: #667eea;
