@@ -96,8 +96,13 @@ SELECT
   fo.year,
   COUNT(DISTINCT fo.facility_id) AS num_facilities,
   COUNT(DISTINCT f.state) AS num_states,
-  COUNT(DISTINCT )
-"""
-
-WHICH_STATES = """
+  COUNT(DISTINCT f.city) AS num_cities
+From Chemical c, Facility f, Form fo, ReleaseRecord r
+WHERE r.total_release > 0
+  AND c.cas_reg_num = :chem_id
+  AND c.cas_reg_num = fo.cas_reg_num
+  AND fo.doc_ctrl_num = r.doc_ctrl_num
+  AND fo.facility_id = f.facility_id
+GROUP BY fo.year
+ORDER BY fo.year;
 """
