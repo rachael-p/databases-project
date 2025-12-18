@@ -302,7 +302,7 @@ def build_tables(df: pd.DataFrame):
 # -----------------------------
 # Usage
 # -----------------------------
-df = load_and_clean("data-preprocessing/raw_epa_data.csv")
+df = load_and_clean("raw_epa_data.csv")
 tables = build_tables(df)
 src_red_df, est_ann_red_df = build_source_reduction_lookups(SRC_RED_ACT,EST_ANNUAL_RED)
 tables["source_reduction_activity_df"] = src_red_df
