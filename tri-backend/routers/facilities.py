@@ -7,13 +7,13 @@ router = APIRouter(prefix="/facilities", tags=["facilities"])
 # returns all facility names with ids
 @router.get("/names")
 def get_all_facilities():
-    rows = fetch_all(queries.GET_ALL_FACILITIES)
+    rows = fetch_all(queries.GET_ALL_FACILITIES, {})
     return {"count": len(rows), "results": rows}
 
 # returns top n (default 10) facilities by total release for a year, with optional state/region/industry
 @router.get("/top-releases")
 def top_releases(
-    year: int = Query(ge=1987, le=2100),
+    year: int = Query(2024, ge=1987, le=2100),
     n: int = Query(10, ge=1, le=1000),
     state: str | None = Query(None, min_length=2, max_length=2),
     region: str | None = Query(None, min_length=1, max_length=2),

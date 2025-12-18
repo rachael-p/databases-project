@@ -28,3 +28,9 @@ def fetch_all(sql: str, params: dict):
             status_code=500,
             detail=f"Database error occurred: {str(e)}"
         )
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error occurred: {str(e)}"
+        )

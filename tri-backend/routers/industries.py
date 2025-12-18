@@ -4,10 +4,16 @@ import queries.industries as queries
 
 router = APIRouter(prefix="/industries", tags=["industries"])
 
+# returns all industry names with codes
+@router.get("/names")
+def get_all_industries():
+    rows = fetch_all(queries.GET_ALL_INDUSTRIES, {})
+    return {"count": len(rows), "results": rows}
+
 # returns releases by industry for a year (can make into pie chart after converting to percent)
 @router.get("/releases-by-industry")
 def releases_by_industry(
-    year: int = Query(ge=1900, le=2100),
+    year: int = Query(2024, ge=1900, le=2100),
 ):
     rows = fetch_all(
         queries.RELEASES_BY_INDUSTRY,

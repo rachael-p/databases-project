@@ -1,5 +1,12 @@
 """SQL used by industry endpoints."""
 
+GET_ALL_INDUSTRIES = """
+SELECT 
+  i.industry_desc,
+  i.industry_code
+FROM Industry i;
+"""
+
 RELEASES_BY_INDUSTRY = """
 SELECT
   i.industry_desc,

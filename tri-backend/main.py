@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import facilities_router, industries_router
+from routers import facilities_router, industries_router, chemicals_router
 
 app = FastAPI(title="EPA MariaDB API")
 
@@ -13,6 +13,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-routers = [facilities_router, industries_router]
+routers = [facilities_router, industries_router, chemicals_router]
 for router in routers:
     app.include_router(router)

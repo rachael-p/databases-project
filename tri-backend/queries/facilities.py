@@ -2,8 +2,8 @@
 
 GET_ALL_FACILITIES = """
 SELECT 
-  f.facility_id,
-  f.facility_name
+  f.facility_name,
+  f.facility_id
 FROM Facility f;
 """
 
