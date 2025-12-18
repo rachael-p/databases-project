@@ -160,11 +160,58 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
           name: item.industry_desc || `Industry ${item.industry_code}`,
           value: item.total_release,
           industry_code: item.industry_code,
-        })).slice(0, limit);  // Limit results
+        })).slice(0, limit);
+        
+        setTopData(transformedData);
+      } else if (selectedEntity === 'chemicals') {
+        // Fetch chemicals data
+        const response = await axios.get('http://localhost:8000/chemicals/top-releases', {
+          params: { year, n: limit }
+        });
+        
+        const transformedData = response.data.results.map((item: any) => ({
+          name: item.chem_name || item.cas_reg_num,
+          value: item.total_release,
+          carcinogen: item.carcinogen ? 'Yes' : 'No',
+          cas_reg_num: item.cas_reg_num,
+        }));
+        
+        setTopData(transformedData);
+      } else if (selectedEntity === 'source_reduction') {
+        // Fetch source reduction data - show before/after comparison
+        const response = await axios.get('http://localhost:8000/sourcered/before-after', {
+          params: { limit }
+        });
+        
+        const transformedData = response.data.results.map((item: any) => {
+          // Calculate reduction amount
+          const reduction = (item.total_release_before || 0) - (item.total_release_after || 0);
+          return {
+            name: item.src_red_desc || 'Unknown Strategy',
+            value: reduction, // Show reduction amount
+            facility_name: item.facility_name,
+            chemical_name: item.chem_name,
+            before: item.total_release_before,
+            after: item.total_release_after,
+          };
+        });
+        
+        setTopData(transformedData);
+      } else if (selectedEntity === 'regions') {
+        // Fetch EPA regions data
+        const response = await axios.get('http://localhost:8000/misc/total-per-region', {
+          params: { year }
+        });
+        
+        const transformedData = response.data.results.map((item: any) => ({
+          name: `Region ${item.region_code}` || item.region_desc,
+          value: item.total_release,
+          region_code: item.region_code,
+        })).slice(0, limit);
         
         setTopData(transformedData);
       } else {
-        // Use mock data for other entity types
+        // Fallback to mock data if no API available
         setTopData(getMockData(selectedEntity));
       }
     } catch (err) {
@@ -246,10 +293,10 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
   };
 
   const entityButtons: { type: EntityType; label: string; icon: string }[] = [
-    { type: 'facilities', label: 'Facilities', icon: '🏭' },
-    { type: 'industries', label: 'Industries', icon: '🏢' },
     { type: 'chemicals', label: 'Chemicals', icon: '⚗️' },
     { type: 'source_reduction', label: 'Source Reduction', icon: '♻️' },
+    { type: 'facilities', label: 'Facilities', icon: '🏭' },
+    { type: 'industries', label: 'Industries', icon: '🏢' },
     { type: 'regions', label: 'EPA Regions', icon: '🗺️' },
   ];
 
@@ -391,11 +438,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
 
         {/* Data Source Notice */}
         <div className="data-source-notice">
-          {['facilities', 'industries'].includes(selectedEntity) ? (
-            <span className="real-data">✅ Showing <strong>Real Data</strong> from EPA TRI Database</span>
-          ) : (
-            <span className="mock-data">⚠️ Showing <strong>Mock Data</strong> (Backend API not yet implemented)</span>
-          )}
+          <span className="real-data">✅ Showing <strong>Real Data</strong> from EPA TRI Database</span>
         </div>
 
         {loading && <div className="loading">Loading data...</div>}

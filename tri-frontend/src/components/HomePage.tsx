@@ -20,10 +20,10 @@ const HomePage: React.FC<HomePageProps> = ({ onQuerySubmit }) => {
   };
 
   const exampleQueries = [
-    "Show me the top 10 facilities with highest toxic releases in 2022",
-    "Which chemicals are carcinogens and have the largest releases?",
-    "Show PFAS chemical releases by EPA region",
-    "Which facilities have source reduction activities?"
+    "Show top 10 chemicals by release in 2022",
+    "Show releases by industry in 2022",
+    "Show top 10 facilities in California",
+    "Show total releases by EPA region"
   ];
 
   return (

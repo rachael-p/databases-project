@@ -41,15 +41,15 @@ Available entity types and their APIs:
    
 3. **chemicals** - For queries PRIMARILY about specific chemicals, substances, carcinogens, PFAS
    - Keywords: "chemicals", "carcinogens", "PFAS", "substances", "which chemicals"
-   - Currently only mock data available
+   - APIs: /chemicals/top-releases, /chemicals/top-carcinogens
    
 4. **source_reduction** - For queries PRIMARILY about pollution prevention, waste reduction activities, recycling
-   - Keywords: "source reduction", "pollution prevention", "waste reduction", "recycling", "reduction activities", "prevention activities"
-   - Currently only mock data available
+   - Keywords: "source reduction", "pollution prevention", "waste reduction", "recycling", "reduction activities", "prevention activities", "most effective strategies"
+   - APIs: /sourcered/most-effective, /sourcered/before-after, /sourcered/top-chem-by-state
    
-5. **epa_regions** - For queries PRIMARILY about EPA regions, geographic regions
-   - Keywords: "EPA region", "region", "regional", "by region"
-   - Currently only mock data available
+5. **regions** - For queries PRIMARILY about EPA regions, geographic regions
+   - Keywords: "EPA region", "region", "regional", "by region", "total per region"
+   - APIs: /misc/total-per-region, /misc/top-industry-per-region
 
 DECISION RULES:
 - If query mentions "source reduction" or "reduction activities" as the MAIN subject → use source_reduction
@@ -65,7 +65,7 @@ Extract parameters from the query:
 
 Return a JSON object with:
 {
-  "entity_type": "<one of: facilities, industries, chemicals, source_reduction, epa_regions>",
+  "entity_type": "<one of: facilities, industries, chemicals, source_reduction, regions>",
   "suggested_api": "<API endpoint path>",
   "parameters": {<extracted parameters>},
   "confidence": "<high/medium/low>"
