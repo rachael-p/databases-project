@@ -74,20 +74,10 @@ const STATE_NAME_MAP: Record<string, string> = {
   WY: 'Wyoming',
 };
 
-type ParamKey =
-  | 'year'
-  | 'startYear'
-  | 'endYear'
-  | 'limit'
-  | 'chem'
-  | 'facility'
-  | 'industry'
-  | 'countMetric';
-
 type EndpointConfig = {
   key: EndpointKey;
   label: string;
-  params?: Array<ParamKey>;
+  params?: Array<'year' | 'startYear' | 'endYear' | 'limit' | 'chem' | 'facility' | 'industry'>;
   description?: string;
 };
 
@@ -154,7 +144,6 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
   const [selectedFacility, setSelectedFacility] = useState<string>('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('');
   const [selectedPrompt, setSelectedPrompt] = useState<string | undefined>(prompts?.[0]);
-  const [countMetric, setCountMetric] = useState<'num_facilities' | 'num_states' | 'num_cities'>('num_facilities');
 
   const [chemOptions, setChemOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [facilityOptions, setFacilityOptions] = useState<Array<{ id: string; name: string }>>([]);
@@ -187,12 +176,6 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
             name: i.industry_desc || `Industry ${i.industry_code}`,
           }))
         );
-        const firstChem = chemRes.data.results?.[0]?.cas_reg_num;
-        const firstFacility = facRes.data.results?.[0]?.facility_id;
-        const firstIndustry = indRes.data.results?.[0]?.industry_code;
-        setSelectedChem((prev) => prev || firstChem || '');
-        setSelectedFacility((prev) => prev || firstFacility || '');
-        setSelectedIndustry((prev) => prev || firstIndustry || '');
       } catch (err) {
         console.error('Error loading dropdown options', err);
       }
@@ -202,33 +185,33 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
 
   const endpointsByEntity: Record<EntityType, EndpointConfig[]> = {
     facilities: [
-      { key: 'facilities/top-releases', label: 'Top Facilities by Total Release', params: ['year', 'limit'] },
-      { key: 'facilities/releases-by-medium', label: 'Facility Releases by Medium Over Time', params: ['facility', 'startYear', 'endYear'] },
+      { key: 'facilities/top-releases', label: 'Top Facilities by Total Release (lbs)', params: ['year', 'limit'] },
+      { key: 'facilities/releases-by-medium', label: 'Facility Releases by Medium Over Time (Air/Water/Land)', params: ['facility', 'startYear', 'endYear'] },
     ],
     industries: [
-      { key: 'industries/releases-by-industry', label: 'Total Releases by Industry Sector', params: ['year'] },
-      { key: 'industries/releases-per-medium', label: 'Industry Releases by Medium Over Time', params: ['industry', 'startYear', 'endYear'] },
+      { key: 'industries/releases-by-industry', label: 'Total Releases by Industry Sector (lbs)', params: ['year'] },
+      { key: 'industries/releases-per-medium', label: 'Industry Releases by Medium Over Time (Air/Water/Land)', params: ['industry', 'startYear', 'endYear'] },
     ],
     chemicals: [
-      { key: 'chemicals/top-releases', label: 'Top Chemicals by Total Release', params: ['year', 'limit'] },
-      { key: 'chemicals/top-carcinogens', label: 'Top Carcinogens by Total Release', params: ['year', 'limit'] },
-      { key: 'chemicals/top-states', label: 'Top States for Releases of a Chemical', params: ['chem', 'year', 'limit'] },
-      { key: 'chemicals/releases-over-time', label: 'Total Releases For a Chemical Over Time', params: ['chem', 'startYear', 'endYear'] },
-      { key: 'chemicals/avg-carcinogens-by-region', label: 'Avg Carcinogen Releases by Region', params: ['year'] },
-      { key: 'chemicals/counts-over-time', label: 'Number of Facilities/Cities/States Reporting a Chemical', params: ['chem', 'countMetric'] },
+      { key: 'chemicals/top-releases', label: 'Top Chemicals by Total Release (lbs)', params: ['year', 'limit'] },
+      { key: 'chemicals/top-carcinogens', label: 'Top Carcinogenic Chemicals (lbs)', params: ['year', 'limit'] },
+      { key: 'chemicals/top-states', label: 'States with Highest Releases for Selected Chemical (lbs)', params: ['chem', 'year', 'limit'] },
+      { key: 'chemicals/releases-over-time', label: 'Chemical Release Trends Over Time (lbs)', params: ['chem', 'startYear', 'endYear'] },
+      { key: 'chemicals/avg-carcinogens-by-region', label: 'Average PFAS Releases by EPA Region (lbs)', params: ['year'] },
+      { key: 'chemicals/counts-over-time', label: 'Number of Facilities Reporting Chemical Over Time', params: ['chem'] },
     ],
     source_reduction: [
-      { key: 'sourcered/most-effective', label: 'Most Effective Reduction Strategies (100% Elimination)', params: ['limit'] },
-      { key: 'sourcered/before-after', label: 'Releases Before vs After Implementation', params: ['limit'] },
-      { key: 'sourcered/top-chem-by-state', label: 'Top Reduced Chemicals by State', params: ['startYear', 'endYear'] },
-      { key: 'sourcered/facility-vs-strats', label: 'Facility Reduction Strategies and Effectiveness', params: ['facility', 'startYear', 'endYear'] },
-      { key: 'sourcered/typical-effectiveness', label: 'Typical Effectiveness per Strategy Type' },
+      { key: 'sourcered/most-effective', label: 'Most Effective Pollution Prevention Strategies (100% Elimination)', params: ['limit'] },
+      { key: 'sourcered/before-after', label: 'Pollution Reduction Before vs After Implementation (lbs)', params: ['limit'] },
+      { key: 'sourcered/top-chem-by-state', label: 'Most Frequently Reduced Chemicals by State (count)', params: ['startYear', 'endYear'] },
+      { key: 'sourcered/facility-vs-strats', label: 'Facility Prevention Strategies and Effectiveness', params: ['facility', 'startYear', 'endYear'] },
+      { key: 'sourcered/typical-effectiveness', label: 'Typical Effectiveness Distribution by Strategy Type (count)' },
     ],
     regions: [
-      { key: 'misc/total-per-region', label: 'Total Toxic Releases by EPA Region', params: ['year'] },
-      { key: 'misc/top-cities-air-releases', label: 'Cities with Highest Air Pollution Releases', params: ['startYear', 'endYear', 'limit'] },
-      { key: 'misc/top-industry-per-region', label: 'Dominant Polluting Industry by EPA Region', params: ['year'] },
-      { key: 'misc/avg-releases-presidency', label: 'Average Annual Releases by Presidential Administration' },
+      { key: 'misc/total-per-region', label: 'Total Toxic Releases by EPA Region (lbs)', params: ['year'] },
+      { key: 'misc/top-cities-air-releases', label: 'Cities with Highest Air Pollution Releases (lbs)', params: ['startYear', 'endYear', 'limit'] },
+      { key: 'misc/top-industry-per-region', label: 'Dominant Polluting Industry by EPA Region (lbs)', params: ['year'] },
+      { key: 'misc/avg-releases-presidency', label: 'Average Annual Releases by Presidential Administration (lbs)' },
     ],
   };
 
@@ -261,22 +244,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
     }
   }, [selectedEntity]);
 
-  // Ensure we have a default chem when the endpoint requires one
-  useEffect(() => {
-    const needsChem = (endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('chem');
-    if (needsChem && !selectedChem && chemOptions.length > 0) {
-      setSelectedChem(chemOptions[0].id);
-    }
-  }, [selectedEndpoint, selectedEntity, selectedChem, chemOptions, endpointsByEntity]);
-
-  // When switching into chemicals, default to first chem for endpoints like top-states/releases-over-time/counts-over-time
-  useEffect(() => {
-    if (selectedEntity === 'chemicals' && !selectedChem && chemOptions.length > 0) {
-      setSelectedChem(chemOptions[0].id);
-    }
-  }, [selectedEntity, selectedChem, chemOptions]);
-
-  const years = Array.from({ length: 11 }, (_, i) => 2024 - i); // simple year list
+  const years = Array.from({ length: 40 }, (_, i) => 2024 - i); // simple year list
 
   // Fetch data when entity/endpoint/params change and auto-analysis is done
   useEffect(() => {
@@ -285,7 +253,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
     }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEntity, selectedEndpoint, year, startYear, endYear, limit, selectedChem, selectedFacility, selectedIndustry, countMetric, autoAnalyzed]);
+  }, [selectedEntity, selectedEndpoint, year, startYear, endYear, limit, selectedChem, selectedFacility, selectedIndustry, autoAnalyzed]);
 
   const analyzeQuery = async (queryText: string, overrideEntity?: EntityType) => {
     try {
@@ -480,6 +448,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
           transformedData = results.map((item: any) => ({
             name: item.chem_name || item.cas_reg_num,
             value: item.total_release,
+            carcinogen: item.carcinogen ? 'Yes' : 'No',
             cas_reg_num: item.cas_reg_num,
           }));
           break;
@@ -756,41 +725,8 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
 
   const currentEndpointLabel = useMemo(() => {
     const match = (endpointsByEntity[selectedEntity] || []).find((ep) => ep.key === selectedEndpoint);
-    if (selectedEndpoint === 'chemicals/counts-over-time') {
-      const metricLabel =
-        countMetric === 'num_facilities'
-          ? 'Facilities'
-          : countMetric === 'num_states'
-          ? 'States'
-          : 'Cities';
-      const chemName =
-        chemOptions.find((c) => c.id === selectedChem)?.name ||
-        selectedChem ||
-        'this chemical';
-      return `Number of ${metricLabel} - ${chemName}`;
-    }
-    if (
-      selectedEntity === 'chemicals' &&
-      ['chemicals/top-states'].includes(selectedEndpoint)
-    ) {
-      const chemName =
-        chemOptions.find((c) => c.id === selectedChem)?.name ||
-        selectedChem ||
-        'this chemical';
-      return match?.label ? `Top States By Releases — ${chemName}` : chemName;
-    }
-    if (
-      selectedEntity === 'chemicals' &&
-      ['chemicals/releases-over-time'].includes(selectedEndpoint)
-    ) {
-      const chemName =
-        chemOptions.find((c) => c.id === selectedChem)?.name ||
-        selectedChem ||
-        'this chemical';
-      return match?.label ? `Total Yearly Releases — ${chemName}` : chemName;
-    }
     return match?.label || 'Results';
-  }, [selectedEndpoint, selectedEntity, countMetric, chemOptions, selectedChem]);
+  }, [selectedEndpoint, selectedEntity]);
 
   const formatLabel = (value: string) => {
     if (typeof value !== 'string') return value;
@@ -970,22 +906,6 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
                 </select>
               </div>
             )}
-
-            {(endpointsByEntity[selectedEntity]?.find((e) => e.key === selectedEndpoint)?.params || []).includes('countMetric') && (
-              <div className="parameter-group">
-                <label htmlFor="count-metric-select">Count metric:</label>
-                <select
-                  id="count-metric-select"
-                  value={countMetric}
-                  onChange={(e) => setCountMetric(e.target.value as 'num_facilities' | 'num_states' | 'num_cities')}
-                  className="parameter-select"
-                >
-                  <option value="num_facilities">Facilities</option>
-                  <option value="num_states">States</option>
-                  <option value="num_cities">Cities</option>
-                </select>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1034,30 +954,17 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
                       <span className="rank">#{index + 1}</span>
                       <div className="item-info">
                         {(() => {
-                          const stateName =
-                            item.state && STATE_NAME_MAP[item.state]
-                              ? STATE_NAME_MAP[item.state]
-                              : item.state;
-                          let displayName =
-                            typeof item.name === 'string'
-                              ? item.name
-                              : item.name !== undefined
-                              ? String(item.name)
-                              : 'N/A';
-                          const statePrefixMatch =
-                            typeof displayName === 'string' &&
-                            displayName.match(/^([A-Z]{2})(\s*-\s*)(.+)/);
+                          const stateName = item.state && STATE_NAME_MAP[item.state] ? STATE_NAME_MAP[item.state] : item.state;
+                          let displayName = item.name;
+                          const statePrefixMatch = typeof displayName === 'string' && displayName.match(/^([A-Z]{2})(\s*-\s*)(.+)/);
                           if (statePrefixMatch) {
                             const mapped = STATE_NAME_MAP[statePrefixMatch[1]] || statePrefixMatch[1];
-                            displayName = `${mapped} (${statePrefixMatch[1]})${statePrefixMatch[2]}${statePrefixMatch[3]}`;
+                            displayName = `${mapped}${statePrefixMatch[2]}${statePrefixMatch[3]}`;
                           }
-                          const stateDetail =
-                            stateName && item.state ? `${stateName}` : item.state;
-
                           return (
                             <>
                               <span className="item-name">{displayName}</span>
-                              {stateDetail && <span className="item-detail">{stateDetail}</span>}
+                              {stateName && <span className="item-detail">State: {stateName}</span>}
                               {item.carcinogen && <span className="item-detail">Carcinogen: {item.carcinogen}</span>}
                             </>
                           );
@@ -1087,16 +994,12 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
                       height={90}
                       interval={0}
                       tickMargin={12}
-                      tick={{ fontSize: 12, fontWeight: 'bold' }}
+                      tick={{ fontSize: 11 }}
                       tickFormatter={formatLabel}
                     />
-                    <YAxis
-                      label={{ value: unitLabel, angle: -90, position: 'insideLeft' }}
-                      tick={false}
-                      tickLine={false}
-                      axisLine={false}
-                    />
+                    <YAxis label={{ value: unitLabel, angle: -90, position: 'insideLeft' }} />
                     <Tooltip />
+                    <Legend />
                     <Bar dataKey="value" fill="#667eea" name={unitLabel} />
                   </BarChart>
                 </ResponsiveContainer>
