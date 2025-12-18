@@ -57807,6 +57807,38 @@ INSERT INTO `SourceReductionActivity` VALUES
 ('S44','Other improvements to operating practices or operator training');
 /*!40000 ALTER TABLE `SourceReductionActivity` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `President`
+--
+
+DROP TABLE IF EXISTS `President`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `President` (
+  `president_name` varchar(100) NOT NULL,
+  `term_start` year(4) NOT NULL,
+  `term_end` year(4) NOT NULL,
+  `party` varchar(20) NOT NULL,
+  PRIMARY KEY (`president_name`,`term_start`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `President`
+--
+
+LOCK TABLES `President` WRITE;
+/*!40000 ALTER TABLE `President` DISABLE KEYS */;
+INSERT INTO `President` VALUES
+('Bill Clinton',1993,2000,'Democrat'),
+('George W. Bush',2001,2008,'Republican'),
+('Barack Obama',2009,2016,'Democrat'),
+('Donald Trump',2017,2020,'Republican'),
+('Joe Biden',2021,2024,'Democrat'),
+('Donald Trump',2025,2029,'Republican');
+/*!40000 ALTER TABLE `President` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

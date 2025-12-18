@@ -1,0 +1,262 @@
+cas_registry_number,cas_chem_name,carc_ind,pfas_ind,metal_ind
+71-43-2,Benzene,1,0,0
+7664-39-3,Hydrogen fluoride,0,0,0
+7440-48-4,Cobalt,1,0,1
+7429-90-5,Aluminum (fume or dust),0,0,0
+7440-50-8,Copper,0,0,1
+N982,Zinc compounds,0,0,1
+7647-01-0,"Hydrochloric acid (acid aerosols including mists, vapors, gas, fog, and other airborne forms of any particle size)",0,0,0
+131-11-3,Dimethyl phthalate,0,0,0
+7439-92-1,Lead,1,0,1
+108-95-2,Phenol,0,0,0
+7697-37-2,Nitric acid,0,0,0
+107-21-1,Ethylene glycol,0,0,0
+N420,Lead compounds,0,0,1
+554-13-2,Lithium carbonate,0,0,0
+7440-02-0,Nickel,1,0,1
+1918-00-9,Dicamba,0,0,0
+N010,Antimony compounds,0,0,1
+N450,Manganese compounds,0,0,1
+100-41-4,Ethylbenzene,1,0,0
+MIXTURE,Mixture,0,0,0
+108-88-3,Toluene,0,0,0
+7439-96-5,Manganese,0,0,1
+7664-41-7,Ammonia,0,0,0
+N090,Chromium compounds (except for chromite ore mined in the Transvaal Region),0,0,1
+75-09-2,Dichloromethane,1,0,0
+7440-47-3,Chromium,0,0,1
+67-56-1,Methanol,0,0,0
+N106,Cyanide compounds,0,0,0
+N511,Nitrate compounds (water dissociable; reportable only when in aqueous solution),0,0,0
+7783-06-4,Hydrogen sulfide,0,0,0
+101-14-4,"4,4'-Methylenebis(2-chloroaniline)",1,0,0
+106-94-5,1-Bromopropane,1,0,0
+79-21-0,Peracetic acid,0,0,0
+N590,Polycyclic aromatic compounds,1,0,0
+N535,Nonylphenol Ethoxylates,0,0,0
+100-42-5,Styrene,1,0,0
+N495,Nickel compounds,1,0,1
+N230,Certain glycol ethers,0,0,0
+71-36-3,n-Butyl alcohol,0,0,0
+1330-20-7,Xylene (mixed isomers),0,0,0
+75-07-0,Acetaldehyde,1,0,0
+110-82-7,Cyclohexane,0,0,0
+N100,Copper compounds,0,0,1
+N120,Diisocyanates,0,0,0
+62-53-3,Aniline,1,0,0
+68-12-2,"N,N-Dimethylformamide",1,0,0
+115-07-1,Propylene,0,0,0
+80-62-6,Methyl methacrylate,0,0,0
+108-93-0,Cyclohexanol,0,0,0
+7782-50-5,Chlorine,0,0,0
+137-26-8,Thiram,0,0,0
+95-63-6,"1,2,4-Trimethylbenzene",0,0,0
+123-31-9,Hydroquinone,0,0,0
+108-10-1,Methyl isobutyl ketone,1,0,0
+N458,Mercury compounds,0,0,1
+N270,Hexabromocyclododecane,0,0,0
+7632-00-0,Sodium nitrite,0,0,0
+50-00-0,Formaldehyde,1,0,0
+98-95-3,Nitrobenzene,1,0,0
+79-01-6,Trichloroethylene,1,0,0
+91-20-3,Naphthalene,1,0,0
+872-50-4,N-Methyl-2-pyrrolidone,0,0,0
+110-54-3,n-Hexane,0,0,0
+N150,Dioxin and dioxin-like compounds,1,0,0
+7440-36-0,Antimony,0,0,1
+80-05-7,"4,4'-Isopropylidenediphenol",0,0,0
+117-81-7,Di(2-ethylhexyl) phthalate,1,0,0
+7440-43-9,Cadmium,1,0,1
+7440-66-6,Zinc (fume or dust),0,0,0
+N040,Barium compounds (except for barium sulfate (CAS No. 7727-43-7)),0,0,0
+121-44-8,Triethylamine,0,0,0
+584-84-9,"Toluene-2,4-diisocyanate",1,0,0
+26471-62-5,Toluene diisocyanate (mixed isomers),1,0,0
+10049-04-4,Chlorine dioxide,0,0,0
+64-18-6,Formic acid,0,0,0
+26002-80-2,Phenothrin,0,0,0
+108-90-7,Chlorobenzene,0,0,0
+63-25-2,Carbaryl,0,0,0
+N740,Silver compounds,0,0,1
+7440-39-3,Barium,0,0,0
+75-21-8,Ethylene oxide,1,0,0
+7439-97-6,Mercury,0,0,1
+N096,Cobalt compounds,1,0,1
+1634-04-4,Methyl tert-butyl ether,0,0,0
+40487-42-1,Pendimethalin,0,0,0
+191-24-2,"Benzo[g,h,i]perylene",0,0,0
+75-05-8,Acetonitrile,0,0,0
+7440-38-2,Arsenic,1,0,1
+95-47-6,o-Xylene,0,0,0
+108-31-6,Maleic anhydride,0,0,0
+90-43-7,2-Phenylphenol,0,0,0
+127-18-4,Tetrachloroethylene,1,0,0
+N725,Selenium compounds,0,0,1
+21087-64-9,Metribuzin,0,0,0
+74-85-1,Ethylene,0,0,0
+107-13-1,Acrylonitrile,1,0,0
+12185-10-3,Phosphorus (yellow or white),0,0,0
+N020,Arsenic compounds,1,0,1
+N770,Vanadium compounds,0,0,1
+75-15-0,Carbon disulfide,0,0,0
+1222-05-5,"1,3,4,6,7,8-Hexahydro-4,6,6,7,8,8-hexamethylcyclopenta[g]-2-benzopyran",0,0,0
+7637-07-2,Boron trifluoride,0,0,0
+75-00-3,Chloroethane,0,0,0
+67-66-3,Chloroform,1,0,0
+71-55-6,"1,1,1-Trichloroethane",0,0,0
+834-12-8,Ametryn,0,0,0
+1313-27-5,Molybdenum trioxide,1,0,0
+96-45-7,Ethylene thiourea,1,0,0
+95-53-4,o-Toluidine,1,0,0
+98-82-8,Cumene,1,0,0
+106-89-8,Epichlorohydrin,1,0,0
+79-10-7,Acrylic acid,0,0,0
+128-04-1,Sodium dimethyldithiocarbamate,0,0,0
+55406-53-6,3-Iodo-2-propynyl butylcarbamate,0,0,0
+1336-36-3,Polychlorinated biphenyls,1,0,0
+7664-93-9,"Sulfuric acid (acid aerosols including mists, vapors, gas, fog, and other airborne forms of any particle size)",0,0,0
+70969-47-0,"Thiols, C8-20, gamma-omega-perfluoro, telomers with acrylamide",0,1,0
+108-05-4,Vinyl acetate,1,0,0
+8001-58-9,Creosote,1,0,0
+75-56-9,Propylene oxide,1,0,0
+107-06-2,"1,2-Dichloroethane",1,0,0
+64-67-5,Diethyl sulfate,1,0,0
+96-33-3,Methyl acrylate,1,0,0
+79-94-7,Tetrabromobisphenol A,0,0,0
+141-32-2,Butyl acrylate,0,0,0
+94-36-0,Benzoyl peroxide,0,0,0
+75-45-6,Chlorodifluoromethane (HCFC-22),0,0,0
+96-23-1,"1,3-Dichloro-2-propanol",0,0,0
+77-73-6,Dicyclopentadiene,0,0,0
+87-86-5,Pentachlorophenol,1,0,0
+75-52-5,Nitromethane,1,0,0
+100-44-7,Benzyl chloride,0,0,0
+85-01-8,Phenanthrene,0,0,0
+463-58-1,Carbonyl sulfide,0,0,0
+7782-49-2,Selenium,0,0,1
+95-48-7,o-Cresol,0,0,0
+N530,Nonylphenol,0,0,0
+1344-28-1,Aluminum oxide (fibrous forms),0,0,0
+85-44-9,Phthalic anhydride,0,0,0
+92-52-4,Biphenyl,0,0,0
+7726-95-6,Bromine,0,0,0
+120-12-7,Anthracene,0,0,0
+118-74-1,Hexachlorobenzene,1,0,0
+111-42-2,Diethanolamine,0,0,0
+74-90-8,Hydrogen cyanide,0,0,0
+1928-43-4,"2,4-D 2-ethylhexyl ester",1,0,0
+77-78-1,Dimethyl sulfate,1,0,0
+74-83-9,Bromomethane,0,0,0
+74-87-3,Chloromethane,0,0,0
+84-74-2,Dibutyl phthalate,0,0,0
+76-06-2,Chloropicrin,0,0,0
+123-72-8,Butyraldehyde,0,0,0
+4080-31-3,"1-(3-Chloroallyl)-3,5,7-triaza-1-azoniaadamantane chloride",0,0,0
+10028-15-6,Ozone,0,0,0
+108-45-2,"1,3-Phenylenediamine",0,0,0
+75-35-4,Vinylidene chloride,1,0,0
+1319-77-3,Cresol (mixed isomers),0,0,0
+110-86-1,Pyridine,1,0,0
+1982-69-0,Sodium dicamba,0,0,0
+330-54-1,Diuron,0,0,0
+108-39-4,m-Cresol,0,0,0
+79-11-8,Chloroacetic acid,0,0,0
+78-92-2,sec-Butyl alcohol,0,0,0
+76-13-1,Freon 113 (CFC-113),0,0,0
+306-83-2,"2,2-Dichloro-1,1,1-trifluoroethane (HCFC-123)",0,0,0
+7440-22-4,Silver,0,0,1
+88-06-2,"2,4,6-Trichlorophenol",1,0,0
+121-75-5,Malathion,1,0,0
+98-86-2,Acetophenone,0,0,0
+533-74-4,Dazomet,0,0,0
+75-02-5,Vinyl fluoride,1,0,0
+140-88-5,Ethyl acrylate,1,0,0
+7440-62-2,Vanadium (except when contained in an alloy),0,0,0
+106-46-7,"1,4-Dichlorobenzene",1,0,0
+120-83-2,"2,4-Dichlorophenol",0,0,0
+924-42-5,N-Methylolacrylamide,0,0,0
+105-67-9,"2,4-Dimethylphenol",0,0,0
+106-99-0,"1,3-Butadiene",1,0,0
+TRD SECRT,Trade Secret,0,0,0
+91-08-7,"Toluene-2,6-diisocyanate",1,0,0
+124-40-3,Dimethylamine,0,0,0
+94-75-7,"2,4-D",1,0,0
+1897-45-6,Chlorothalonil,1,0,0
+2699-79-8,Sulfuryl fluoride,0,0,0
+122-39-4,Diphenylamine,0,0,0
+307-55-1,Perfluorododecanoic acid,0,1,0
+128-03-0,Potassium dimethyldithiocarbamate,0,0,0
+108-38-3,m-Xylene,0,0,0
+N078,Cadmium compounds,1,0,1
+335-76-2,Perfluorodecanoic acid,0,1,0
+110-80-5,2-Ethoxyethanol,0,0,0
+1332-21-4,Asbestos (friable),1,0,0
+N125,Diisononyl Phthalates (DINP),0,0,0
+56-23-5,Carbon tetrachloride,1,0,0
+106-42-3,p-Xylene,0,0,0
+77-09-8,Phenolphthalein,1,0,0
+106-44-5,p-Cresol,0,0,0
+75-44-5,Phosgene,0,0,0
+78-84-2,Isobutyraldehyde,0,0,0
+122-34-9,Simazine,0,0,0
+335-67-1,Perfluorooctanoic acid,1,1,0
+1120-71-4,"1,3-Propane sultone",1,0,0
+N503,Nicotine and salts,0,0,0
+93-65-2,Mecoprop,1,0,0
+62-56-6,Thiourea,1,0,0
+2451-62-9,Triglycidyl isocyanurate,0,0,0
+116-06-3,Aldicarb,0,0,0
+961-11-5,Tetrachlorvinphos,1,0,0
+149-30-4,2-Mercaptobenzothiazole,1,0,0
+2837-89-0,"2-Chloro-1,1,1,2-tetrafluoroethane (HCFC-124)",0,0,0
+75-69-4,Trichlorofluoromethane (CFC-11),0,0,0
+79-06-1,Acrylamide,1,0,0
+1912-24-9,Atrazine,0,0,0
+126-99-8,Chloroprene,1,0,0
+57-41-0,Phenytoin,1,0,0
+110-00-9,Furan,1,0,0
+123-91-1,"1,4-Dioxane",1,0,0
+375-95-1,Perfluorononanoic acid,0,1,0
+7550-45-0,Titanium tetrachloride,0,0,0
+65530-64-5,"Ethanol, 2,2'-iminobis-, compd. with alpha,alpha'-[phosphinicobis(oxy-2,1-ethanediyl)]bis[omega-fluoropoly(difluoromethylene)] (1:1)",0,1,0
+75-65-0,tert-Butyl alcohol,0,0,0
+88-85-7,Dinitrobutyl phenol,0,0,0
+330-55-2,Linuron,0,0,0
+107-18-6,Allyl alcohol,0,0,0
+79-22-1,Methyl chlorocarbonate,0,0,0
+1163-19-5,Decabromodiphenyl oxide,0,0,0
+143372-54-7,"Siloxanes and Silicones, (3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,10-heptadecafluorodecyl)oxy Me, hydroxy Me, Me octyl, ethers with polyethylene glycol mono-Me ether",0,1,0
+N050,Beryllium compounds,1,0,1
+7803-51-2,Phosphine,0,0,0
+82-68-8,Quintozene,0,0,0
+59669-26-0,Thiodicarb,0,0,0
+101-77-9,"4,4'-Methylenedianiline",1,0,0
+82657-04-3,Bifenthrin,0,0,0
+2300-66-5,Dimethylamine dicamba,0,0,0
+133-07-3,Folpet,0,0,0
+95-80-7,"2,4-Diaminotoluene",1,0,0
+57213-69-1,Triclopyr-triethylammonium salt,0,0,0
+80-15-9,Cumene hydroperoxide,0,0,0
+75-68-3,"1-Chloro-1,1-difluoroethane (HCFC-142b)",0,0,0
+35691-65-7,"1-Bromo-1-(bromomethyl)-1,3-propanedicarbonitrile",0,0,0
+302-01-2,Hydrazine,1,0,0
+107-02-8,Acrolein,1,0,0
+65530-63-4,"Ethanol, 2,2'-iminobis-, compd. with alpha-fluoro-omega-[2-(phosphonooxy)ethyl]poly(difluoromethylene) (2:1)",0,1,0
+120-80-9,Catechol,1,0,0
+540-59-0,"1,2-Dichloroethylene",0,0,0
+106-50-3,p-Phenylenediamine,0,0,0
+5902-51-2,Terbacil,0,0,0
+1910-42-5,Paraquat dichloride,0,0,0
+79-00-5,"1,1,2-Trichloroethane",0,0,0
+111-41-1,N-Hydroxyethylethylenediamine,0,0,0
+422-56-0,"3,3-Dichloro-1,1,1,2,2-pentafluoropropane (HCFC-225ca)",0,0,0
+51235-04-2,Hexazinone,0,0,0
+55-63-0,Nitroglycerin,0,0,0
+75-01-4,Vinyl chloride,1,0,0
+107-05-1,Allyl chloride,0,0,0
+27314-13-2,Norflurazon,0,0,0
+62-73-7,Dichlorvos,1,0,0
+1929-82-4,Nitrapyrin,0,0,0
+N084,Chlorophenols,1,0,0
+25376-45-8,Diaminotoluene (mixed isomers),1,0,0
+542-75-6,"1,3-Dichloropropylene",1,0,0

@@ -105,6 +105,14 @@ CREATE TABLE ImplementsSourceReduction (
     FOREIGN KEY (est_annual_red_code) REFERENCES EstimatedAnnualReduction(est_annual_red_code)
 );
 
+CREATE TABLE President(
+    president_name VARCHAR(100) NOT NULL,
+    term_start YEAR NOT NULL,
+    term_end YEAR NOT NULL,
+    party VARCHAR(20) NOT NULL,
+    PRIMARY KEY (president_name, term_start)
+)
+
 
 -- (Optional) clear tables before reloading
 SET FOREIGN_KEY_CHECKS=0;
@@ -297,3 +305,17 @@ SET
   est_annual_red_code  = NULLIF(@estimated_annual_reduction_code,'\\N'),
   activity_num         = NULLIF(@activity_number,'\\N');
 
+-- -------------------------------
+-- 11) President
+-- -------------------------------
+LOAD DATA LOCAL INFILE '/home/rpei2/databases/project/cleaned_data/president.csv'
+INTO TABLE President
+FIELDS TERMINATED BY ',' ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 LINES
+(@president_name, @term_start, @term_end, @party)
+SET
+  president_name = NULLIF(@president_name,'\\N'),
+  term_start     = NULLIF(@term_start,'\\N'),
+  term_end       = NULLIF(@term_end,'\\N'),
+  party          = NULLIF(@party,'\\N');

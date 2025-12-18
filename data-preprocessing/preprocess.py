@@ -77,6 +77,22 @@ def build_source_reduction_lookups(
 
     return source_reduction_activity_df, estimated_annual_reduction_df
 
+
+def build_presidents() -> pd.DataFrame:
+    """Small lookup for U.S. presidents covering the TRI data years."""
+    data = [
+        ("Bill Clinton", 1993, 2000, "Democrat"),
+        ("George W. Bush", 2001, 2008, "Republican"),
+        ("Barack Obama", 2009, 2016, "Democrat"),
+        ("Donald Trump", 2017, 2020, "Republican"),
+        ("Joe Biden", 2021, 2024, "Democrat"),
+        ("Donald Trump", 2025, 2029, "Republican"),
+    ]
+    return pd.DataFrame(
+        data,
+        columns=["president_name", "term_start", "term_end", "party"],
+    )
+
 # -----------------------------
 # 1) Read + standardize columns
 # -----------------------------
@@ -279,13 +295,14 @@ def build_tables(df: pd.DataFrame):
         "form_df": form_df,
         "release_record_df": release_record_df,
         "implements_sr_df": implements_sr_df,
+        "president_df": build_presidents(),
     }
 
 
 # -----------------------------
 # Usage
 # -----------------------------
-df = load_and_clean("preprocessing/raw_epa_data.csv")
+df = load_and_clean("data-preprocessing/raw_epa_data.csv")
 tables = build_tables(df)
 src_red_df, est_ann_red_df = build_source_reduction_lookups(SRC_RED_ACT,EST_ANNUAL_RED)
 tables["source_reduction_activity_df"] = src_red_df
