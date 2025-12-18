@@ -12,7 +12,7 @@ interface VisualizationPageProps {
   onBack: () => void;
 }
 
-type EntityType = 'facilities' | 'chemicals' | 'source_reduction' | 'regions';
+type EntityType = 'facilities' | 'chemicals' | 'source_reduction' | 'regions' | 'industries';
 type ChartType = 'bar' | 'pie' | 'map';
 
 interface DataItem {
@@ -26,18 +26,33 @@ interface DataItem {
   [key: string]: any;
 }
 
-// Generate mock coordinates for states (simplified)
+// US State coordinates (center of each state)
 const stateCoordinates: { [key: string]: { lat: number; lng: number } } = {
-  'CA': { lat: 36.7783, lng: -119.4179 },
-  'TX': { lat: 31.9686, lng: -99.9018 },
-  'NY': { lat: 43.2994, lng: -74.2179 },
-  'FL': { lat: 27.6648, lng: -81.5158 },
-  'IL': { lat: 40.6331, lng: -89.3985 },
-  'PA': { lat: 41.2033, lng: -77.1945 },
-  'OH': { lat: 40.4173, lng: -82.9071 },
-  'MI': { lat: 44.3148, lng: -85.6024 },
-  'GA': { lat: 32.1656, lng: -82.9001 },
-  'NC': { lat: 35.7596, lng: -79.0193 },
+  'AL': { lat: 32.3182, lng: -86.9023 }, 'AK': { lat: 64.2008, lng: -149.4937 },
+  'AZ': { lat: 34.0489, lng: -111.0937 }, 'AR': { lat: 35.2010, lng: -91.8318 },
+  'CA': { lat: 36.7783, lng: -119.4179 }, 'CO': { lat: 39.5501, lng: -105.7821 },
+  'CT': { lat: 41.6032, lng: -73.0877 }, 'DE': { lat: 38.9108, lng: -75.5277 },
+  'FL': { lat: 27.6648, lng: -81.5158 }, 'GA': { lat: 32.1656, lng: -82.9001 },
+  'HI': { lat: 19.8968, lng: -155.5828 }, 'ID': { lat: 44.0682, lng: -114.7420 },
+  'IL': { lat: 40.6331, lng: -89.3985 }, 'IN': { lat: 40.2672, lng: -86.1349 },
+  'IA': { lat: 41.8780, lng: -93.0977 }, 'KS': { lat: 39.0119, lng: -98.4842 },
+  'KY': { lat: 37.8393, lng: -84.2700 }, 'LA': { lat: 30.9843, lng: -91.9623 },
+  'ME': { lat: 45.2538, lng: -69.4455 }, 'MD': { lat: 39.0458, lng: -76.6413 },
+  'MA': { lat: 42.4072, lng: -71.3824 }, 'MI': { lat: 44.3148, lng: -85.6024 },
+  'MN': { lat: 46.7296, lng: -94.6859 }, 'MS': { lat: 32.3547, lng: -89.3985 },
+  'MO': { lat: 37.9643, lng: -91.8318 }, 'MT': { lat: 46.8797, lng: -110.3626 },
+  'NE': { lat: 41.4925, lng: -99.9018 }, 'NV': { lat: 38.8026, lng: -116.4194 },
+  'NH': { lat: 43.1939, lng: -71.5724 }, 'NJ': { lat: 40.0583, lng: -74.4057 },
+  'NM': { lat: 34.5199, lng: -105.8701 }, 'NY': { lat: 43.2994, lng: -74.2179 },
+  'NC': { lat: 35.7596, lng: -79.0193 }, 'ND': { lat: 47.5515, lng: -101.0020 },
+  'OH': { lat: 40.4173, lng: -82.9071 }, 'OK': { lat: 35.4676, lng: -97.5164 },
+  'OR': { lat: 43.8041, lng: -120.5542 }, 'PA': { lat: 41.2033, lng: -77.1945 },
+  'RI': { lat: 41.5801, lng: -71.4774 }, 'SC': { lat: 33.8361, lng: -81.1637 },
+  'SD': { lat: 43.9695, lng: -99.9018 }, 'TN': { lat: 35.5175, lng: -86.5804 },
+  'TX': { lat: 31.9686, lng: -99.9018 }, 'UT': { lat: 39.3210, lng: -111.0937 },
+  'VT': { lat: 44.5588, lng: -72.5778 }, 'VA': { lat: 37.4316, lng: -78.6569 },
+  'WA': { lat: 47.7511, lng: -120.7401 }, 'WV': { lat: 38.5976, lng: -80.4549 },
+  'WI': { lat: 43.7844, lng: -88.7879 }, 'WY': { lat: 43.0760, lng: -107.2903 },
 };
 
 const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'];
@@ -49,6 +64,8 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
   const [topData, setTopData] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
+  const [analysisConfidence, setAnalysisConfidence] = useState<string>('');
   
   // Interactive parameters
   const [year, setYear] = useState(2022);
@@ -58,45 +75,101 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
   const states = ['all', 'CA', 'TX', 'NY', 'FL', 'IL', 'PA', 'OH', 'MI', 'GA', 'NC', 'MA', 'WA', 'AZ', 'TN', 'IN'];
   const years = Array.from({ length: 36 }, (_, i) => 2022 - i); // 1987-2022
 
+  // Auto-analyze query on initial load
   useEffect(() => {
+    if (query && !autoAnalyzed) {
+      analyzeQuery(query);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  // Fetch data when parameters change, but only after auto-analysis is complete
+  useEffect(() => {
+    // If we have an initial query and haven't analyzed it yet, wait
+    if (query && !autoAnalyzed) {
+      return; // Don't fetch data yet
+    }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEntity, year, selectedState, limit]);
+  }, [selectedEntity, year, selectedState, limit, autoAnalyzed]);
+
+  const analyzeQuery = async (queryText: string) => {
+    try {
+      setLoading(true); // Show loading during analysis
+      
+      const response = await axios.post('http://localhost:8000/analyze/query', {
+        query: queryText
+      });
+      
+      const { entity_type, parameters, confidence } = response.data;
+      
+      console.log('Query analyzed:', { entity_type, parameters, confidence });
+      
+      // Auto-set parameters if provided (before setting entity to avoid multiple fetches)
+      if (parameters.year) setYear(parameters.year);
+      if (parameters.state) setSelectedState(parameters.state);
+      if (parameters.n || parameters.limit) setLimit(parameters.n || parameters.limit);
+      
+      // Set confidence first
+      setAnalysisConfidence(confidence);
+      
+      // Set entity type and mark as analyzed (this will trigger fetchData via useEffect)
+      setAutoAnalyzed(true);
+      setSelectedEntity(entity_type as EntityType);
+      
+      // Note: Don't set loading to false here, let fetchData handle it
+    } catch (err) {
+      console.error('Error analyzing query:', err);
+      // Fallback to facilities if analysis fails
+      setAutoAnalyzed(true);
+      setSelectedEntity('facilities');
+      setLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      // Connect to your friend's API
       if (selectedEntity === 'facilities') {
-        const params: any = { year, limit };
+        const params: any = { year, n: limit };
         if (selectedState !== 'all') {
           params.state = selectedState;
         }
         
         const response = await axios.get('http://localhost:8000/facilities/top-releases', { params });
         
-        // Transform API response to match our data structure
         const transformedData = response.data.results.map((item: any) => ({
           name: item.facility_name,
           value: item.total_release,
           state: item.state,
           facility_id: item.facility_id,
-          // Add mock coordinates based on state
           latitude: stateCoordinates[item.state]?.lat + (Math.random() - 0.5) * 2,
           longitude: stateCoordinates[item.state]?.lng + (Math.random() - 0.5) * 2,
         }));
         
         setTopData(transformedData);
+      } else if (selectedEntity === 'industries') {
+        // Fetch industries data
+        const response = await axios.get('http://localhost:8000/industries/releases-by-industry', {
+          params: { year }
+        });
+        
+        const transformedData = response.data.results.map((item: any) => ({
+          name: item.industry_desc || `Industry ${item.industry_code}`,
+          value: item.total_release,
+          industry_code: item.industry_code,
+        })).slice(0, limit);  // Limit results
+        
+        setTopData(transformedData);
       } else {
-        // Use mock data for other entity types (for now)
+        // Use mock data for other entity types
         setTopData(getMockData(selectedEntity));
       }
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to fetch data from API. Using mock data.');
-      // Use mock data as fallback
       setTopData(getMockData(selectedEntity));
     } finally {
       setLoading(false);
@@ -117,6 +190,17 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
           { name: 'Facility H', value: 6200, state: 'MI', latitude: 42.33, longitude: -83.05 },
           { name: 'Facility I', value: 5500, state: 'GA', latitude: 33.75, longitude: -84.39 },
           { name: 'Facility J', value: 5000, state: 'NC', latitude: 35.78, longitude: -78.64 },
+        ];
+      case 'industries':
+        return [
+          { name: 'Primary Metals', value: 85000 },
+          { name: 'Chemicals', value: 72000 },
+          { name: 'Paper', value: 58000 },
+          { name: 'Petroleum', value: 45000 },
+          { name: 'Plastics', value: 38000 },
+          { name: 'Food', value: 25000 },
+          { name: 'Transportation Equipment', value: 22000 },
+          { name: 'Fabricated Metals', value: 18000 },
         ];
       case 'chemicals':
         return [
@@ -154,11 +238,16 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
 
   const handleNewSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchData();
+    // Re-analyze the updated query
+    if (inputValue) {
+      setAutoAnalyzed(false);
+      analyzeQuery(inputValue);
+    }
   };
 
   const entityButtons: { type: EntityType; label: string; icon: string }[] = [
     { type: 'facilities', label: 'Facilities', icon: '🏭' },
+    { type: 'industries', label: 'Industries', icon: '🏢' },
     { type: 'chemicals', label: 'Chemicals', icon: '⚗️' },
     { type: 'source_reduction', label: 'Source Reduction', icon: '♻️' },
     { type: 'regions', label: 'EPA Regions', icon: '🗺️' },
@@ -249,18 +338,33 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
           </div>
         </div>
 
-        {/* Entity Type Buttons */}
-        <div className="entity-buttons">
-          {entityButtons.map((btn) => (
-            <button
-              key={btn.type}
-              className={`entity-button ${selectedEntity === btn.type ? 'active' : ''}`}
-              onClick={() => setSelectedEntity(btn.type)}
-            >
-              <span className="entity-icon">{btn.icon}</span>
-              {btn.label}
-            </button>
-          ))}
+        {/* Auto-Analysis Result */}
+        {autoAnalyzed && analysisConfidence && (
+          <div className="analysis-result">
+            <span className="analysis-icon">🤖</span>
+            <strong>AI Analysis:</strong> Detected query type as <strong>{selectedEntity}</strong>
+            {analysisConfidence === 'high' && ' (High confidence ✅)'}
+            {analysisConfidence === 'medium' && ' (Medium confidence ⚠️)'}
+            {analysisConfidence === 'low' && ' (Low confidence ⚠️)'}
+            <span className="analysis-hint"> - Or choose a different view below:</span>
+          </div>
+        )}
+
+        {/* Entity Type Buttons - Quick View Filters */}
+        <div className="entity-section">
+          <h3>🔍 Quick View (Optional)</h3>
+          <div className="entity-buttons">
+            {entityButtons.map((btn) => (
+              <button
+                key={btn.type}
+                className={`entity-button ${selectedEntity === btn.type ? 'active' : ''}`}
+                onClick={() => setSelectedEntity(btn.type)}
+              >
+                <span className="entity-icon">{btn.icon}</span>
+                {btn.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Chart Type Selection */}
@@ -270,12 +374,28 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack }) 
               key={btn.type}
               className={`chart-type-button ${chartType === btn.type ? 'active' : ''}`}
               onClick={() => setChartType(btn.type)}
-              disabled={btn.type === 'map' && selectedEntity !== 'facilities'}
+              disabled={btn.type === 'map' && !['facilities'].includes(selectedEntity)}
             >
               <span className="chart-icon">{btn.icon}</span>
               {btn.label}
             </button>
           ))}
+        </div>
+
+        {/* Map View Availability Notice */}
+        {!['facilities'].includes(selectedEntity) && (
+          <div className="map-notice">
+            ℹ️ Map view is only available for <strong>Facilities</strong> (requires geographic coordinates)
+          </div>
+        )}
+
+        {/* Data Source Notice */}
+        <div className="data-source-notice">
+          {['facilities', 'industries'].includes(selectedEntity) ? (
+            <span className="real-data">✅ Showing <strong>Real Data</strong> from EPA TRI Database</span>
+          ) : (
+            <span className="mock-data">⚠️ Showing <strong>Mock Data</strong> (Backend API not yet implemented)</span>
+          )}
         </div>
 
         {loading && <div className="loading">Loading data...</div>}
