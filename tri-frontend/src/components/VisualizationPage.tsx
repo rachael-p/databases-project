@@ -144,6 +144,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   const [analysisConfidence, setAnalysisConfidence] = useState<string>('');
   const [usingCustomSQL, setUsingCustomSQL] = useState(false); // Flag to prevent fetchData after custom SQL
+  const [displayedQuery, setDisplayedQuery] = useState(query);
   const [generatedSql, setGeneratedSql] = useState<string | null>(null);
   
   // Basic params for queries
@@ -241,6 +242,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
     setAutoAnalyzed(false);
     setAnalysisConfidence('');
     setSelectedPrompt(prompts?.[0]);
+    setDisplayedQuery(query);
 
     if (skipAnalysis && forcedEntity) {
       setSelectedEntity(forcedEntity);
@@ -332,6 +334,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
               setAnalysisConfidence('Custom SQL (LLM Generated)');
               setGeneratedSql(sql || null);
               setUsingCustomSQL(true);
+              setDisplayedQuery(queryText);
               setAutoAnalyzed(true);
               setLoading(false);
               return;
@@ -358,6 +361,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
             setAnalysisConfidence('Custom SQL (LLM Generated)');
             setGeneratedSql(sql || null);
             setUsingCustomSQL(true); // Mark that we're using custom SQL
+            setDisplayedQuery(queryText);
             setAutoAnalyzed(true);
             setLoading(false);
             return; // Don't proceed with normal entity detection
@@ -384,6 +388,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
       setAutoAnalyzed(true);
       const detected = (overrideEntity || entity_type) as EntityType;
       setSelectedEntity(detected);
+      setDisplayedQuery(queryText);
       
       // Note: Don't set loading to false here, let fetchData handle it
     } catch (err) {
@@ -391,6 +396,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
       // Fallback to facilities if analysis fails
       setAutoAnalyzed(true);
       setSelectedEntity('facilities');
+      setDisplayedQuery(queryText);
       setLoading(false);
     }
   };
@@ -1052,7 +1058,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
           </>
         ) : (
           <>
-            <h1 className="submitted-query-heading">Submitted query: {query || inputValue || 'Enter a query to analyze'}</h1>
+            <h1 className="submitted-query-heading">Submitted query: {displayedQuery || query || 'Enter a query to analyze'}</h1>
             {generatedSql && (
               <div className="sql-block">
                 <div className="sql-title">Generated SQL</div>
