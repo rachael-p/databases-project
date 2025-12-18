@@ -131,7 +131,7 @@ Rules:
             
             # Execute the SQL (with caution in production!)
             try:
-                results = fetch_all(sql)
+                results = fetch_all(sql, {})  # LLM generates complete SQL, no params needed
                 return NLQueryResponse(
                     query=query,
                     query_type="custom_sql",
