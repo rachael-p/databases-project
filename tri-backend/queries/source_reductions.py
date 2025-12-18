@@ -9,18 +9,14 @@ FROM SourceReductionActivity sr;
 
 MOST_EFFECTIVE_STRATS = """
 SELECT 
-  c.chem_name,
   sra.src_red_desc,
-  fac.facility_name,
-  f.year
-FROM SourceReductionActivity sra, EstimatedAnnualReduction e, ImplementsSourceReduction i, Form f, Chemical c, Facility fac
+  COUNT(*) AS r1_count
+FROM SourceReductionActivity sra, ImplementsSourceReduction i, EstimatedAnnualReduction e
 WHERE i.est_annual_red_code = 'R1'
-  AND f.facility_id = fac.facility_id
-  AND f.cas_reg_num = c.cas_reg_num
-  AND sra.src_red_code = i.src_red_code
+  AND i.src_red_code = sra.src_red_code
   AND e.est_annual_red_code = i.est_annual_red_code
-  AND f.doc_ctrl_num = i.doc_ctrl_num
-ORDER BY f.year DESC
+GROUP BY sra.src_red_desc
+ORDER BY r1_count DESC
 LIMIT :limit;
 """
 

@@ -512,9 +512,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
         case 'sourcered/most-effective':
           transformedData = results.map((item: any) => ({
             name: item.src_red_desc,
-            value: item.chem_name ? 1 : 0,
-            facility_name: item.facility_name,
-            chem_name: item.chem_name,
+            value: Number(item.r1_count ?? item.count ?? 0),
           }));
           break;
         case 'sourcered/before-after':
@@ -1063,8 +1061,8 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
                           );
                         })()}
                       </div>
-                      <span className="item-value">
-                        {item.value.toLocaleString()} {unitLabel !== 'value' ? unitLabel : ''}
+                    <span className="item-value">
+                        {Number(item.value ?? 0).toLocaleString()} {unitLabel !== 'value' ? unitLabel : ''}
                       </span>
                     </div>
                   ))}
