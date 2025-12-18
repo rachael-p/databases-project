@@ -296,10 +296,65 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEntity, selectedEndpoint, year, startYear, endYear, limit, selectedChem, selectedFacility, selectedIndustry, countMetric, autoAnalyzed, usingCustomSQL]);
 
+  const runCustomSql = async (queryText: string) => {
+    try {
+      const nlResponse = await axios.post('http://localhost:8000/nlquery/', { query: queryText });
+      const { query_type, results, sql } = nlResponse.data;
+
+      if (query_type !== 'custom_sql' || !results) {
+        return false;
+      }
+
+      const hasMeaningfulData = (results || []).some((row: any) =>
+        Object.values(row || {}).some((val) => val !== null && val !== undefined && val !== '')
+      );
+
+      if (!hasMeaningfulData) {
+        setTopData([]);
+        setAnalysisConfidence('Custom SQL (LLM Generated)');
+        setGeneratedSql(sql || null);
+        setUsingCustomSQL(true);
+        setDisplayedQuery(queryText);
+        setAutoAnalyzed(true);
+        setLoading(false);
+        return true;
+      }
+
+      const transformedData: DataItem[] = (results || []).map((item: any, index: number) => {
+        const name = item.year
+          ? `Year ${item.year}`
+          : item.region_code
+          ? `Region ${item.region_code}`
+          : item.state || item.city || item.chem_name || item.facility_name || `Item ${index + 1}`;
+
+        const value = item.total_release || item.avg_release || item.count || 0;
+
+        return {
+          name: String(name),
+          value: Number(value),
+          ...item,
+        };
+      });
+
+      setTopData(transformedData);
+      setAnalysisConfidence('Custom SQL (LLM Generated)');
+      setGeneratedSql(sql || null);
+      setUsingCustomSQL(true);
+      setDisplayedQuery(queryText);
+      setAutoAnalyzed(true);
+      setLoading(false);
+      return true;
+    } catch (nlError) {
+      console.error('Custom SQL query failed:', nlError);
+      return false;
+    }
+  };
+
   const analyzeQuery = async (queryText: string, overrideEntity?: EntityType) => {
     try {
       setLoading(true); // Show loading during analysis
       setGeneratedSql(null);
+      setUsingCustomSQL(false);
       
       const response = await axios.post('http://localhost:8000/analyze/query', {
         query: queryText
@@ -308,74 +363,17 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
       const { entity_type, parameters, confidence } = response.data;
       
       console.log('Query analyzed:', { entity_type, parameters, confidence });
-      
-      // If confidence is low, try using custom SQL via /nlquery/
-      if (confidence === 'low') {
-        console.log('Low confidence detected, using custom SQL endpoint...');
-        try {
-          const nlResponse = await axios.post('http://localhost:8000/nlquery/', {
-            query: queryText
-          });
-          
-          const { query_type, results, sql } = nlResponse.data;
-          
-          if (query_type === 'custom_sql' && results) {
-            console.log('Custom SQL query executed:', sql);
-            console.log('Results:', results);
+      const recognizedEntity = entity_type && (entity_type as EntityType) in endpointsByEntity;
+      const lowOrMedium = confidence === 'low' || confidence === 'medium';
+      const shouldTryCustom = lowOrMedium;
 
-            const hasMeaningfulData = (results || []).some((row: any) =>
-              Object.values(row || {}).some(
-                (val) => val !== null && val !== undefined && val !== ''
-              )
-            );
-
-            if (!hasMeaningfulData) {
-              setTopData([]);
-              setAnalysisConfidence('Custom SQL (LLM Generated)');
-              setGeneratedSql(sql || null);
-              setUsingCustomSQL(true);
-              setDisplayedQuery(queryText);
-              setAutoAnalyzed(true);
-              setLoading(false);
-              return;
-            }
-            
-            // Transform custom SQL results to match DataItem format
-            const transformedData: DataItem[] = (results || []).map((item: any, index: number) => {
-              const name = item.year
-                ? `Year ${item.year}`
-                : item.region_code
-                ? `Region ${item.region_code}`
-                : item.state || item.city || item.chem_name || item.facility_name || `Item ${index + 1}`;
-
-              const value = item.total_release || item.avg_release || item.count || 0;
-
-              return {
-                name: String(name),
-                value: Number(value),
-                ...item,
-              };
-            });
-            
-            setTopData(transformedData);
-            setAnalysisConfidence('Custom SQL (LLM Generated)');
-            setGeneratedSql(sql || null);
-            setUsingCustomSQL(true); // Mark that we're using custom SQL
-            setDisplayedQuery(queryText);
-            setAutoAnalyzed(true);
-            setLoading(false);
-            return; // Don't proceed with normal entity detection
-          }
-        } catch (nlError) {
-          console.error('Custom SQL query failed:', nlError);
-          // Fall through to normal handling
-        }
+      if (shouldTryCustom) {
+        const customHandled = await runCustomSql(queryText);
+        setUsingCustomSQL(true);
+        setAutoAnalyzed(true);
+        if (customHandled) return;
       }
-      
-      // Reset custom SQL flag if we're not using it
-      setUsingCustomSQL(false);
-      setGeneratedSql(null);
-      
+            
       // Auto-set parameters if provided (before setting entity to avoid multiple fetches)
       if (parameters.year) setYear(parameters.year);
       if (parameters.state) setSelectedState(parameters.state);
@@ -1063,26 +1061,6 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
               <div className="sql-block">
                 <div className="sql-title">Generated SQL</div>
                 <pre>{generatedSql}</pre>
-              </div>
-            )}
-            {autoAnalyzed && analysisConfidence && (
-              <div className="analysis-result">
-                <span className="analysis-icon">🤖</span>
-                <strong>AI Analysis:</strong>
-                {usingCustomSQL ? (
-                  <>
-                    Using <strong>Custom SQL</strong> (LLM Generated) ✨
-                    <span className="analysis-hint"> - Results generated from natural language query</span>
-                  </>
-                ) : (
-                  <>
-                    Detected query type as <strong>{selectedEntity}</strong>
-                    {analysisConfidence === 'high' && ' (High confidence ✅)'}
-                    {analysisConfidence === 'medium' && ' (Medium confidence ⚠️)'}
-                    {analysisConfidence === 'low' && ' (Low confidence ❓)'}
-                    <span className="analysis-hint"> - Or choose a different view below:</span>
-                  </>
-                )}
               </div>
             )}
           </>

@@ -24,48 +24,11 @@ class NLQueryResponse(BaseModel):
     sql: str | None = None
     results: list | None = None
 
-# Available endpoints documentation
-AVAILABLE_ENDPOINTS = """
-Available Endpoints and Queries:
-
-1. GET /facilities/names
-   - Returns all facility names with IDs
-   - No parameters
-
-2. GET /facilities/top-releases
-   - Returns top N facilities by total release for a year
-   - Parameters: year (required), n (default 10), state (optional 2-letter code), 
-                 region (optional 1-2 digit), industry_code (optional int)
-   - Example: "Show top 10 facilities with highest releases in 2022"
-   - Example: "What are the top 25 facilities in California in 2021?"
-
-3. GET /facilities/releases-by-medium
-   - Returns releases by medium (air, water, land) for a facility over years
-   - Parameters: facility_id (required), start_year, end_year
-   - Example: "Show releases by medium for facility ABC123 from 2010 to 2020"
-
-4. GET /industries/releases-by-industry
-   - Returns total releases by industry for a year
-   - Parameters: year (required)
-   - Example: "Show releases by industry in 2022"
-
-5. GET /industries/releases-per-medium
-   - Returns releases per medium for an industry over years
-   - Parameters: industry_code (required), start_year, end_year
-   - Example: "Show releases per medium for industry 327 from 2015 to 2020"
-
-Database Schema (for custom SQL):
-- Facility (facility_id, facility_name, state, region_code)
-- Form (doc_ctrl_num, facility_id, year, industry_code)
-- ReleaseRecord (doc_ctrl_num, medium, total_release)
-- Industry (industry_code, industry_desc)
-"""
-
 @router.post("/", response_model=NLQueryResponse)
 async def natural_language_query(request: NLQueryRequest):
     """
     Process a natural language query about EPA TRI data.
-    First tries to match with existing endpoints, then generates custom SQL if needed.
+    Generate custom SQL directly (frontend handles endpoint mapping).
     """
     
     query = request.query
@@ -73,24 +36,19 @@ async def natural_language_query(request: NLQueryRequest):
     if not query or query.strip() == "":
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
-    # Step 1: Ask LLM to check if existing endpoints can be used
-    system_prompt = f"""You are a helpful assistant that matches natural language queries to API endpoints.
-
-{AVAILABLE_ENDPOINTS}
-
-Your task:
-1. Analyze the user's query
-2. If it can be answered using one of the available endpoints, respond with:
-   {{"type": "existing_endpoint", "endpoint": "/path/to/endpoint", "params": {{"param1": value1, "param2": value2}}}}
-3. If NO existing endpoint can answer the query, respond with:
-   {{"type": "custom_sql", "sql": "SELECT ... FROM ... WHERE ..."}}
+    system_prompt = """You are a SQL generator for the TRI database. Return ONLY JSON:
+{"type": "custom_sql", "sql": "<SQL here>"}
+Use this schema:
+- Facility (facility_id, facility_name, state, region_code)
+- Form (doc_ctrl_num, facility_id, year, industry_code)
+- ReleaseRecord (doc_ctrl_num, medium, total_release)
+- Industry (industry_code, industry_desc)
 
 Rules:
-- For state parameters, use 2-letter codes (CA, TX, NY, etc.)
-- For year parameters, use 4-digit integers (2022, 2021, etc.)
-- Always include the full endpoint path
-- Return ONLY valid JSON, no explanations
-"""
+- Use 2-letter state codes.
+- Use 4-digit years.
+- Never reference API endpoints.
+- Return only the JSON object, no explanations."""
 
     try:
         response = client.chat.completions.create(
@@ -109,47 +67,24 @@ Rules:
         import json
         result = json.loads(result_text)
         
-        if result["type"] == "existing_endpoint":
-            # Use existing endpoint
-            endpoint = result["endpoint"]
-            params = result.get("params", {})
-            
-            # Map endpoint to actual function (simplified - you might want to improve this)
-            # For now, we'll just return the endpoint info without executing
+        sql = result.get("sql")
+        if not sql:
+            raise HTTPException(status_code=500, detail="LLM did not return SQL")
+
+        try:
+            results = fetch_all(sql, {})
             return NLQueryResponse(
                 query=query,
-                query_type="existing_endpoint",
-                endpoint=endpoint,
-                params=params,
-                sql=None,
-                results=None  # Frontend can call the endpoint directly
+                query_type="custom_sql",
+                endpoint=None,
+                params=None,
+                sql=sql,
+                results=results
             )
-        
-        elif result["type"] == "custom_sql":
-            # Generated custom SQL
-            sql = result["sql"]
-            
-            # Execute the SQL (with caution in production!)
-            try:
-                results = fetch_all(sql, {})  # LLM generates complete SQL, no params needed
-                return NLQueryResponse(
-                    query=query,
-                    query_type="custom_sql",
-                    endpoint=None,
-                    params=None,
-                    sql=sql,
-                    results=results
-                )
-            except Exception as db_error:
-                raise HTTPException(
-                    status_code=500, 
-                    detail=f"Database error: {str(db_error)}"
-                )
-        
-        else:
+        except Exception as db_error:
             raise HTTPException(
-                status_code=500,
-                detail="LLM returned unexpected response type"
+                status_code=500, 
+                detail=f"Database error: {str(db_error)}"
             )
     
     except json.JSONDecodeError as e:
@@ -213,4 +148,3 @@ Return ONLY the SQL query, no explanations."""
             status_code=500,
             detail=f"Error: {str(e)}"
         )
-
