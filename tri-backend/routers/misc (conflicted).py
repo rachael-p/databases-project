@@ -35,7 +35,7 @@ def top_industry_per_region(year: int = Query(2024,ge=1900, le=2100)):
     )
     return {"count": len(rows), "results": rows}
 
-# returns average releases for each presidency
+
 @router.get("/avg-releases-presidency")
 def avg_releases_presidency():
     rows = fetch_all(
