@@ -144,6 +144,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   const [analysisConfidence, setAnalysisConfidence] = useState<string>('');
   const [usingCustomSQL, setUsingCustomSQL] = useState(false); // Flag to prevent fetchData after custom SQL
+  const [generatedSql, setGeneratedSql] = useState<string | null>(null);
   
   // Basic params for queries
   const [year, setYear] = useState(2022);
@@ -245,6 +246,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
       setSelectedEntity(forcedEntity);
       setAutoAnalyzed(true);
       setAnalysisConfidence('');
+      setGeneratedSql(null);
       return;
     }
 
@@ -295,6 +297,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
   const analyzeQuery = async (queryText: string, overrideEntity?: EntityType) => {
     try {
       setLoading(true); // Show loading during analysis
+      setGeneratedSql(null);
       
       const response = await axios.post('http://localhost:8000/analyze/query', {
         query: queryText
@@ -317,28 +320,43 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
           if (query_type === 'custom_sql' && results) {
             console.log('Custom SQL query executed:', sql);
             console.log('Results:', results);
+
+            const hasMeaningfulData = (results || []).some((row: any) =>
+              Object.values(row || {}).some(
+                (val) => val !== null && val !== undefined && val !== ''
+              )
+            );
+
+            if (!hasMeaningfulData) {
+              setTopData([]);
+              setAnalysisConfidence('Custom SQL (LLM Generated)');
+              setGeneratedSql(sql || null);
+              setUsingCustomSQL(true);
+              setAutoAnalyzed(true);
+              setLoading(false);
+              return;
+            }
             
             // Transform custom SQL results to match DataItem format
-            const transformedData: DataItem[] = results.map((item: any, index: number) => {
-              // Try to find a meaningful name field
-              const name = item.year ? 
-                `Year ${item.year}` : 
-                item.region_code ? 
-                  `Region ${item.region_code}` : 
-                  item.state || item.city || item.chem_name || item.facility_name || `Item ${index + 1}`;
-              
-              // Try to find a meaningful value field
+            const transformedData: DataItem[] = (results || []).map((item: any, index: number) => {
+              const name = item.year
+                ? `Year ${item.year}`
+                : item.region_code
+                ? `Region ${item.region_code}`
+                : item.state || item.city || item.chem_name || item.facility_name || `Item ${index + 1}`;
+
               const value = item.total_release || item.avg_release || item.count || 0;
-              
+
               return {
                 name: String(name),
                 value: Number(value),
-                ...item // Keep all original fields
+                ...item,
               };
             });
             
             setTopData(transformedData);
             setAnalysisConfidence('Custom SQL (LLM Generated)');
+            setGeneratedSql(sql || null);
             setUsingCustomSQL(true); // Mark that we're using custom SQL
             setAutoAnalyzed(true);
             setLoading(false);
@@ -352,6 +370,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
       
       // Reset custom SQL flag if we're not using it
       setUsingCustomSQL(false);
+      setGeneratedSql(null);
       
       // Auto-set parameters if provided (before setting entity to avoid multiple fetches)
       if (parameters.year) setYear(parameters.year);
@@ -859,68 +878,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
         )}
       </div>
 
-<<<<<<< Updated upstream
-      {/* Query Categories */}
       <div className="viz-container">
-        <h1 className="viz-header">{'TRI Data Explorer Presets'}</h1>
-        <div className="entity-section">
-          <div className="entity-buttons">
-            {entityButtons.map((btn) => (
-              <button
-                key={btn.type}
-                className={`entity-button ${selectedEntity === btn.type ? 'active' : ''}`}
-                onClick={() => {
-                  setUsingCustomSQL(false); // Reset custom SQL flag when manually switching entities
-                  setSelectedEntity(btn.type);
-                }}
-              >
-                <span className="entity-icon">{btn.icon}</span>
-                {btn.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-
-        {/* Auto-Analysis Result */}
-        {!skipAnalysis && autoAnalyzed && analysisConfidence && (
-          <div className="analysis-result">
-            <span className="analysis-icon">🤖</span>
-            <strong>AI Analysis:</strong> 
-            {usingCustomSQL ? (
-              <>
-                Using <strong>Custom SQL</strong> (LLM Generated) ✨
-                <span className="analysis-hint"> - Results generated from natural language query</span>
-              </>
-            ) : (
-              <>
-                Detected query type as <strong>{selectedEntity}</strong>
-                {analysisConfidence === 'high' && ' (High confidence ✅)'}
-                {analysisConfidence === 'medium' && ' (Medium confidence ⚠️)'}
-                {analysisConfidence === 'low' && ' (Low confidence ❓)'}
-                <span className="analysis-hint"> - Or choose a different view below:</span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Endpoint selector */}
-        <div className="parameters-section">
-          <h3>Choose A Query</h3>
-          <div className="parameter-controls">
-            <div className="parameter-group">
-              <label htmlFor="endpoint-select">Query:</label>
-              <select
-                id="endpoint-select"
-                value={selectedEndpoint}
-                onChange={(e) => setSelectedEndpoint(e.target.value)}
-                className="parameter-select"
-              >
-                {(endpointsByEntity[selectedEntity] || []).map((ep) => (
-                  <option key={ep.key} value={ep.key}>
-                    {ep.label}
-                  </option>
-=======
         {skipAnalysis ? (
           <>
             <h1 className="viz-header">{'TRI Data Explorer Presets'}</h1>
@@ -930,12 +888,14 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
                   <button
                     key={btn.type}
                     className={`entity-button ${selectedEntity === btn.type ? 'active' : ''}`}
-                    onClick={() => setSelectedEntity(btn.type)}
+                    onClick={() => {
+                      setUsingCustomSQL(false);
+                      setSelectedEntity(btn.type);
+                    }}
                   >
                     <span className="entity-icon">{btn.icon}</span>
                     {btn.label}
                   </button>
->>>>>>> Stashed changes
                 ))}
               </div>
             </div>
@@ -1091,7 +1051,35 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
             </div>
           </>
         ) : (
-          <h1 className="submitted-query-heading">Submitted query: {query || inputValue || 'Enter a query to analyze'}</h1>
+          <>
+            <h1 className="submitted-query-heading">Submitted query: {query || inputValue || 'Enter a query to analyze'}</h1>
+            {generatedSql && (
+              <div className="sql-block">
+                <div className="sql-title">Generated SQL</div>
+                <pre>{generatedSql}</pre>
+              </div>
+            )}
+            {autoAnalyzed && analysisConfidence && (
+              <div className="analysis-result">
+                <span className="analysis-icon">🤖</span>
+                <strong>AI Analysis:</strong>
+                {usingCustomSQL ? (
+                  <>
+                    Using <strong>Custom SQL</strong> (LLM Generated) ✨
+                    <span className="analysis-hint"> - Results generated from natural language query</span>
+                  </>
+                ) : (
+                  <>
+                    Detected query type as <strong>{selectedEntity}</strong>
+                    {analysisConfidence === 'high' && ' (High confidence ✅)'}
+                    {analysisConfidence === 'medium' && ' (Medium confidence ⚠️)'}
+                    {analysisConfidence === 'low' && ' (Low confidence ❓)'}
+                    <span className="analysis-hint"> - Or choose a different view below:</span>
+                  </>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {/* Query Input */}
@@ -1100,7 +1088,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
             type="text"
             className="nli-query-input-viz"
             placeholder="Have another question? Enter it here..."
-            value={''}
+            value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
           />
           <button type="submit" className="submit-button-viz">
@@ -1129,9 +1117,11 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
           <div className="results-section">
             {/* Top List */}
             <div className="top-list-section">
-              <h2>{currentEndpointLabel}</h2>
-              {topData.length === 0 ? (
-                <div className="no-data">No data available</div>
+              <h2>{skipAnalysis ? currentEndpointLabel : 'Results'}</h2>
+              {topData.length === 0 || !topData ? (
+                <div className="no-data">
+                  {usingCustomSQL ? 'No results available due to lack of data' : 'No data available'}
+                </div>
               ) : (
                 <div className="top-list">
                   {topData.slice(0, limit).map((item, index) => (
@@ -1257,6 +1247,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
           </div>
         )}
       </div>
+    </div>
   );
 };
 
