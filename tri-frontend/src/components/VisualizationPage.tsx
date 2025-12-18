@@ -143,6 +143,7 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
   const [error, setError] = useState<string | null>(null);
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   const [analysisConfidence, setAnalysisConfidence] = useState<string>('');
+  const [usingCustomSQL, setUsingCustomSQL] = useState(false); // Flag to prevent fetchData after custom SQL
   
   // Basic params for queries
   const [year, setYear] = useState(2022);
@@ -283,9 +284,13 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
     if (query && !autoAnalyzed) {
       return;
     }
+    // Skip fetching if we're using custom SQL results
+    if (usingCustomSQL) {
+      return;
+    }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEntity, selectedEndpoint, year, startYear, endYear, limit, selectedChem, selectedFacility, selectedIndustry, countMetric, autoAnalyzed]);
+  }, [selectedEntity, selectedEndpoint, year, startYear, endYear, limit, selectedChem, selectedFacility, selectedIndustry, countMetric, autoAnalyzed, usingCustomSQL]);
 
   const analyzeQuery = async (queryText: string, overrideEntity?: EntityType) => {
     try {
@@ -298,6 +303,55 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
       const { entity_type, parameters, confidence } = response.data;
       
       console.log('Query analyzed:', { entity_type, parameters, confidence });
+      
+      // If confidence is low, try using custom SQL via /nlquery/
+      if (confidence === 'low') {
+        console.log('Low confidence detected, using custom SQL endpoint...');
+        try {
+          const nlResponse = await axios.post('http://localhost:8000/nlquery/', {
+            query: queryText
+          });
+          
+          const { query_type, results, sql } = nlResponse.data;
+          
+          if (query_type === 'custom_sql' && results) {
+            console.log('Custom SQL query executed:', sql);
+            console.log('Results:', results);
+            
+            // Transform custom SQL results to match DataItem format
+            const transformedData: DataItem[] = results.map((item: any, index: number) => {
+              // Try to find a meaningful name field
+              const name = item.year ? 
+                `Year ${item.year}` : 
+                item.region_code ? 
+                  `Region ${item.region_code}` : 
+                  item.state || item.city || item.chem_name || item.facility_name || `Item ${index + 1}`;
+              
+              // Try to find a meaningful value field
+              const value = item.total_release || item.avg_release || item.count || 0;
+              
+              return {
+                name: String(name),
+                value: Number(value),
+                ...item // Keep all original fields
+              };
+            });
+            
+            setTopData(transformedData);
+            setAnalysisConfidence('Custom SQL (LLM Generated)');
+            setUsingCustomSQL(true); // Mark that we're using custom SQL
+            setAutoAnalyzed(true);
+            setLoading(false);
+            return; // Don't proceed with normal entity detection
+          }
+        } catch (nlError) {
+          console.error('Custom SQL query failed:', nlError);
+          // Fall through to normal handling
+        }
+      }
+      
+      // Reset custom SQL flag if we're not using it
+      setUsingCustomSQL(false);
       
       // Auto-set parameters if provided (before setting entity to avoid multiple fetches)
       if (parameters.year) setYear(parameters.year);
@@ -814,7 +868,10 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
               <button
                 key={btn.type}
                 className={`entity-button ${selectedEntity === btn.type ? 'active' : ''}`}
-                onClick={() => setSelectedEntity(btn.type)}
+                onClick={() => {
+                  setUsingCustomSQL(false); // Reset custom SQL flag when manually switching entities
+                  setSelectedEntity(btn.type);
+                }}
               >
                 <span className="entity-icon">{btn.icon}</span>
                 {btn.label}
@@ -828,11 +885,21 @@ const VisualizationPage: React.FC<VisualizationPageProps> = ({ query, onBack, fo
         {!skipAnalysis && autoAnalyzed && analysisConfidence && (
           <div className="analysis-result">
             <span className="analysis-icon">🤖</span>
-            <strong>AI Analysis:</strong> Detected query type as <strong>{selectedEntity}</strong>
-            {analysisConfidence === 'high' && ' (High confidence)'}
-            {analysisConfidence === 'medium' && ' (Medium confidence)'}
-            {analysisConfidence === 'low' && ' (Low confidence)'}
-            <span className="analysis-hint"> - Or choose a different view below:</span>
+            <strong>AI Analysis:</strong> 
+            {usingCustomSQL ? (
+              <>
+                Using <strong>Custom SQL</strong> (LLM Generated) ✨
+                <span className="analysis-hint"> - Results generated from natural language query</span>
+              </>
+            ) : (
+              <>
+                Detected query type as <strong>{selectedEntity}</strong>
+                {analysisConfidence === 'high' && ' (High confidence ✅)'}
+                {analysisConfidence === 'medium' && ' (Medium confidence ⚠️)'}
+                {analysisConfidence === 'low' && ' (Low confidence ❓)'}
+                <span className="analysis-hint"> - Or choose a different view below:</span>
+              </>
+            )}
           </div>
         )}
 
